@@ -16,7 +16,7 @@ $offset = ($page - 1) * $limit;
 
 // Get categories for sidebar
 $categories = [];
-$categories_query = "SELECT category_id, category_name, COUNT(p.product_id) as product_count 
+$categories_query = "SELECT c.category_id, c.category_name, COUNT(p.product_id) as product_count 
                      FROM categories c 
                      LEFT JOIN products p ON c.category_id = p.category_id AND p.is_active = 1
                      WHERE c.is_active = 1 
