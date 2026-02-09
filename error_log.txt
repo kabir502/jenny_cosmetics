@@ -121,3 +121,113 @@ Stack trace:
   thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 31
 [09-Feb-2026 05:45:35 UTC] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\jenny_cosmetics\includes\auth_check.php on line 3
 [09-Feb-2026 05:45:35 UTC] PHP Fatal error:  Cannot redeclare isLoggedIn() (previously declared in C:\xampp\htdocs\jenny_cosmetics\includes\auth_check.php:7) in C:\xampp\htdocs\jenny_cosmetics\session_handler.php on line 26
+[09-Feb-2026 05:49:26 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:55
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 55
+[09-Feb-2026 05:49:34 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:55
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 55
+[09-Feb-2026 05:49:57 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:31
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 31
+[09-Feb-2026 05:55:11 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:13 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:17 UTC] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\jenny_cosmetics\includes\auth_check.php on line 3
+[09-Feb-2026 05:55:17 UTC] PHP Fatal error:  Cannot redeclare isLoggedIn() (previously declared in C:\xampp\htdocs\jenny_cosmetics\includes\auth_check.php:7) in C:\xampp\htdocs\jenny_cosmetics\session_handler.php on line 26
+[09-Feb-2026 05:55:22 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:24 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:24 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:25 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:25 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:25 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:25 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:26 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:26 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:26 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:26 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:27 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:27 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:27 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:28 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:29 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:30 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:31 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:33 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:34 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:55:35 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
+[09-Feb-2026 05:56:37 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function generateCSRFToken() in C:\xampp\htdocs\jenny_cosmetics\signup.php:146
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\signup.php on line 146
