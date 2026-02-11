@@ -1,73 +1,101 @@
 <?php
-// user_login.php - Customer/User login page
+// admin/login.php - Admin login page - FIXED
 
-// Start session if not started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Include central session handler from root
+require_once '../session_handler.php';
 
 // Include database
-require_once 'config/database.php';
+require_once '../config/database.php';
 
-// Check if already logged in as user
-if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
-    header("Location: index.php");
+// Check if already logged in as admin
+if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
+    header("Location: dashboard.php");
     exit();
 }
 
 // Initialize variables
 $error = '';
-$email = '';
+$username = '';
 
 // Process login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
+    $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     
     // Validate inputs
-    if (empty($email) || empty($password)) {
-        $error = 'Please enter both email and password.';
+    if (empty($username) || empty($password)) {
+        $error = 'Please enter both username and password.';
     } else {
-        // Sanitize email
-        $email = mysqli_real_escape_string($connection, $email);
+        // Sanitize username
+        $username = mysqli_real_escape_string($connection, $username);
         
-        // Get user from database
-        $query = "SELECT * FROM users 
-                  WHERE email = '$email' AND is_active = 1 
+        // Get admin from database - FIXED QUERY with proper parentheses
+        $query = "SELECT * FROM administrators 
+                  WHERE (username = '$username' OR email = '$username') 
+                  AND is_active = 1 
                   LIMIT 1";
+        
         $result = mysqli_query($connection, $query);
         
         if ($result && mysqli_num_rows($result) > 0) {
-            $user = mysqli_fetch_assoc($result);
+            $admin = mysqli_fetch_assoc($result);
             
-            // Verify password
-            if (password_verify($password, $user['password_hash'])) {
+            // DEBUG: Show what we found
+            // echo "<pre>";
+            // print_r($admin);
+            // echo "Password hash from DB: " . $admin['password_hash'] . "<br>";
+            // echo "Password entered: " . $password . "<br>";
+            // echo "password_verify result: " . (password_verify($password, $admin['password_hash']) ? 'true' : 'false');
+            // echo "</pre>";
+            
+            // Try to verify password - check both hashed and plain text
+            $password_verified = false;
+            
+            // Method 1: Check if password is already hashed
+            if (password_verify($password, $admin['password_hash'])) {
+                $password_verified = true;
+            }
+            // Method 2: Check if password is stored as plain text (for migration)
+            elseif ($password === $admin['password_hash']) {
+                $password_verified = true;
+                // Update to hashed version
+                $new_hash = password_hash($password, PASSWORD_DEFAULT);
+                mysqli_query($connection, 
+                    "UPDATE administrators SET password_hash = '$new_hash' 
+                     WHERE admin_id = {$admin['admin_id']}");
+            }
+            
+            if ($password_verified) {
                 // Set session variables
-                $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['username'] = $user['first_name'] . ' ' . $user['last_name'];
-                $_SESSION['email'] = $user['email'];
-                $_SESSION['logged_in'] = true;
-                $_SESSION['last_login'] = time();
+                $_SESSION['admin_id'] = $admin['admin_id'];
+                $_SESSION['admin_username'] = $admin['username'];
+                $_SESSION['admin_name'] = $admin['full_name'];
+                $_SESSION['admin_email'] = $admin['email'];
+                $_SESSION['admin_role'] = $admin['role'];
+                $_SESSION['admin_logged_in'] = true;
+                $_SESSION['admin_last_login'] = time();
                 
                 // Update last login
                 mysqli_query($connection, 
-                    "UPDATE users SET last_login = NOW() 
-                     WHERE user_id = {$user['user_id']}");
+                    "UPDATE administrators SET last_login = NOW() 
+                     WHERE admin_id = {$admin['admin_id']}");
                 
-                // Redirect to home or previous page
-                if (isset($_SESSION['redirect_url'])) {
-                    $redirect_url = $_SESSION['redirect_url'];
-                    unset($_SESSION['redirect_url']);
-                    header("Location: $redirect_url");
-                } else {
-                    header("Location: index.php");
-                }
+                // Redirect to dashboard
+                header("Location: dashboard.php");
                 exit();
             } else {
-                $error = 'Invalid email or password.';
+                $error = 'Invalid username or password. Password verification failed.';
+                
+                // DEBUG: Show more info
+                // $error .= '<br>DB Hash: ' . substr($admin['password_hash'], 0, 20) . '...';
+                // $error .= '<br>password_verify: ' . (password_verify($password, $admin['password_hash']) ? 'true' : 'false');
             }
         } else {
-            $error = 'Invalid email or password. Account not found or inactive.';
+            $error = 'Invalid username or password. Admin not found or inactive.';
+            
+            // DEBUG: Show query result
+            // $error .= '<br>Query: ' . $query;
+            // $error .= '<br>Rows found: ' . mysqli_num_rows($result);
         }
     }
 }
@@ -77,12 +105,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Login - Jenny's Cosmetics & Jewelry</title>
+    <title>Admin Login - Jenny's Cosmetics & Jewelry</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             height: 100vh;
             display: flex;
             align-items: center;
@@ -92,11 +120,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 100%;
             max-width: 400px;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         .login-header {
-            background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
             border-radius: 15px 15px 0 0;
+        }
+        .form-control {
+            padding: 12px 15px;
         }
         .btn-login {
             padding: 12px;
@@ -105,16 +136,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-    <?php include 'includes/header.php'; ?>
-    
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-4">
                 <!-- Login Card -->
-                <div class="card login-card mt-5">
+                <div class="card login-card">
                     <!-- Header -->
                     <div class="card-header login-header text-white text-center py-4">
-                        <h2><i class="fas fa-user me-2"></i>Customer Login</h2>
+                        <h2><i class="fas fa-lock me-2"></i>Admin Login</h2>
                         <p class="mb-0">Jenny's Cosmetics & Jewelry</p>
                     </div>
                     
@@ -128,28 +157,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <?php endif; ?>
                         
-                        <!-- Success Message (after signup) -->
-                        <?php if (isset($_GET['success'])): ?>
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle me-2"></i><?php echo htmlspecialchars($_GET['success']); ?>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <!-- DEBUG: Test Hash -->
+                        <?php if (isset($_GET['debug'])): ?>
+                        <?php
+                        $test_password = 'admin123';
+                        $test_hash = password_hash($test_password, PASSWORD_DEFAULT);
+                        ?>
+                        <div class="alert alert-info">
+                            <strong>Debug Info:</strong><br>
+                            Test Password: <?php echo $test_password; ?><br>
+                            Generated Hash: <?php echo $test_hash; ?><br>
+                            Verify Test: <?php echo password_verify($test_password, $test_hash) ? '✅ True' : '❌ False'; ?>
                         </div>
                         <?php endif; ?>
                         
                         <!-- Login Form -->
                         <form method="POST" action="">
-                            <!-- Email -->
+                            <!-- Username -->
                             <div class="mb-3">
-                                <label for="email" class="form-label">
-                                    <i class="fas fa-envelope me-1"></i>Email Address
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Username or Email
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="fas fa-at"></i>
                                     </span>
-                                    <input type="email" class="form-control" id="email" name="email" 
-                                           value="<?php echo htmlspecialchars($email); ?>" 
-                                           placeholder="Enter your email" required autofocus>
+                                    <input type="text" class="form-control" id="username" name="username" 
+                                           value="<?php echo htmlspecialchars($username); ?>" 
+                                           placeholder="Enter username or email" required autofocus>
                                 </div>
                             </div>
                             
@@ -169,9 +204,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
-                                <div class="text-end mt-1">
-                                    <a href="forgot_password.php" class="small text-decoration-none">Forgot password?</a>
-                                </div>
                             </div>
                             
                             <!-- Remember Me -->
@@ -187,36 +219,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="fas fa-sign-in-alt me-2"></i>Login
                             </button>
                             
-                            <!-- Divider -->
-                            <div class="text-center my-3">
-                                <span class="text-muted">or</span>
-                            </div>
-                            
                             <!-- Links -->
                             <div class="text-center">
-                                <p class="mb-2">
-                                    New customer? 
-                                    <a href="signup.php" class="text-decoration-none fw-bold">Create an account</a>
-                                </p>
-                                <p class="mb-0">
-                                    <a href="index.php" class="text-decoration-none">
-                                        <i class="fas fa-home me-1"></i>Back to Home
-                                    </a>
-                                </p>
+                                <a href="../index.php" class="text-decoration-none">
+                                    <i class="fas fa-home me-1"></i>Back to Home
+                                </a>
                             </div>
                         </form>
                     </div>
+                    
+                    <!-- Footer -->
+                    <div class="card-footer text-center py-3">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Secure Admin Access
+                        </small>
+                    </div>
                 </div>
                 
-                <!-- Demo User Credentials -->
+                <!-- Debug Tools -->
                 <div class="card mt-3">
                     <div class="card-body p-3">
                         <h6 class="card-title">
-                            <i class="fas fa-user-circle me-2 text-primary"></i>Test User Account
+                            <i class="fas fa-tools me-2 text-warning"></i>Troubleshooting
                         </h6>
-                        <p class="mb-1"><strong>Email:</strong> customer@example.com</p>
-                        <p class="mb-1"><strong>Password:</strong> password123</p>
-                        <small class="text-muted">Use this for testing</small>
+                        <div class="d-grid gap-2">
+                            <a href="?debug=1" class="btn btn-sm btn-outline-info">Debug Mode</a>
+                            <a href="reset_password.php" class="btn btn-sm btn-outline-danger">Reset Password</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -242,9 +272,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
-        // Auto focus on email field
+        // Auto focus on username field
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('email').focus();
+            document.getElementById('username').focus();
         });
     </script>
 </body>

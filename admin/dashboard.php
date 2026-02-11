@@ -1,10 +1,8 @@
 <?php
-// admin/dashboard.php - Admin dashboard
+// admin/dashboard.php - Admin dashboard - FIXED
 
-// Start session if not started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Include central session handler from root
+require_once '../session_handler.php';
 
 // Check if admin is logged in
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
@@ -52,7 +50,7 @@ while ($order = mysqli_fetch_assoc($recent_orders_result)) {
 
 // Low stock products
 $low_stock_query = "SELECT * FROM products 
-                    WHERE quantity_in_stock <= min_stock_level 
+                    WHERE quantity_in_stock <= 10 
                     AND quantity_in_stock > 0 
                     ORDER BY quantity_in_stock ASC 
                     LIMIT 5";
@@ -73,9 +71,11 @@ while ($user = mysqli_fetch_assoc($recent_users_result)) {
 }
 
 // Include admin header
-include 'includes/admin_header.php';
+include '../includes/admin_header.php';
 ?>
 
+<!-- Rest of your dashboard code remains the same -->
+<!-- Just remove the session_start() from the top as shown above -->
 <div class="container-fluid">
     <!-- Welcome Message -->
     <div class="row mb-4">
@@ -434,5 +434,5 @@ include 'includes/admin_header.php';
 
 <?php
 // Include admin footer
-include 'includes/admin_footer.php';
+include '../includes/admin_footer.php';
 ?>

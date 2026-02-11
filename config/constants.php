@@ -75,6 +75,12 @@ defined('MAX_FILE_SIZE') || define('MAX_FILE_SIZE', 5242880); // 5MB
 defined('SESSION_TIMEOUT') || define('SESSION_TIMEOUT', 1800); // 30 minutes
 defined('DEBUG_MODE') || define('DEBUG_MODE', true);
 
+// Email configuration (for OTP)
+define('SMTP_HOST', 'smtp.gmail.com');
+define('SMTP_PORT', 587);
+define('SMTP_USER', 'kabirbaloch4444@gmail.com');
+define('SMTP_PASS', 'gwmdzicwjpgnskfd');
+
 // Error reporting
 if (DEBUG_MODE) {
     error_reporting(E_ALL);
