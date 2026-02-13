@@ -1,6 +1,6 @@
 <?php
 // includes/auth_check.php
-session_start();
+// session_start();
 
 // Check if user is logged in
 function isLoggedIn() {
