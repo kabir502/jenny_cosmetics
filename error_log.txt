@@ -537,3 +537,26 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in C:\xampp\htdocs\jenny_cosmetics\admin\analytics.php on line 872
+[18-Feb-2026 04:26:05 UTC] PHP Fatal error:  Uncaught DivisionByZeroError: Division by zero in C:\xampp\htdocs\jenny\admin\analytics.php:872
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny\admin\analytics.php on line 872
+[18-Feb-2026 04:26:12 UTC] PHP Fatal error:  Uncaught DivisionByZeroError: Division by zero in C:\xampp\htdocs\jenny\admin\analytics.php:872
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny\admin\analytics.php on line 872
+[18-Feb-2026 04:31:32 UTC] Admin ID: 1 updated their profile
+[18-Feb-2026 04:38:28 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "DB_NAME" in C:\xampp\htdocs\jenny\admin\settings.php:1003
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny\admin\settings.php on line 1003
+[18-Feb-2026 04:38:55 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "DB_NAME" in C:\xampp\htdocs\jenny\admin\settings.php:1003
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny\admin\settings.php on line 1003
+[18-Feb-2026 04:49:06 UTC] PHP Warning:  include(includes/admin_header.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\jenny\admin\add_product.php on line 20
+[18-Feb-2026 04:49:06 UTC] PHP Warning:  include(): Failed opening 'includes/admin_header.php' for inclusion (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\jenny\admin\add_product.php on line 20
+[18-Feb-2026 04:49:06 UTC] PHP Warning:  include(includes/admin_sidebar.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\jenny\admin\add_product.php on line 25
+[18-Feb-2026 04:49:06 UTC] PHP Warning:  include(): Failed opening 'includes/admin_sidebar.php' for inclusion (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\jenny\admin\add_product.php on line 25
+[18-Feb-2026 04:49:57 UTC] PHP Warning:  include(../includes/admin_sidebar.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\jenny\admin\add_product.php on line 25
+[18-Feb-2026 04:49:57 UTC] PHP Warning:  include(): Failed opening '../includes/admin_sidebar.php' for inclusion (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\jenny\admin\add_product.php on line 25

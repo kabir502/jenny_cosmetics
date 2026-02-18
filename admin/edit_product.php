@@ -1,5 +1,5 @@
 <?php
-// admin/add_product.php - Add New Product Page
+// admin/edit_product.php - Edit Product Page
 
 // Include central session handler from root
 require_once '../session_handler.php';
@@ -19,12 +19,34 @@ $message = '';
 $message_type = '';
 $error = '';
 
+// Get product ID from URL
+$product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+if ($product_id <= 0) {
+    header("Location: products.php?error=Invalid product ID");
+    exit();
+}
+
+// Get product details
+$product_query = "SELECT * FROM products WHERE product_id = ?";
+$product_stmt = mysqli_prepare($connection, $product_query);
+mysqli_stmt_bind_param($product_stmt, "i", $product_id);
+mysqli_stmt_execute($product_stmt);
+$product_result = mysqli_stmt_get_result($product_stmt);
+
+if (mysqli_num_rows($product_result) == 0) {
+    header("Location: products.php?error=Product not found");
+    exit();
+}
+
+$product = mysqli_fetch_assoc($product_result);
+
 // Get categories for dropdown
 $categories_query = "SELECT category_id, category_name FROM categories WHERE is_active = 1 ORDER BY category_name";
 $categories_result = mysqli_query($connection, $categories_query);
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_product'])) {
     
     // Get form data
     $product_name = mysqli_real_escape_string($connection, trim($_POST['product_name']));
@@ -44,10 +66,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
     if (empty($product_name) || empty($sku) || empty($category_id) || empty($unit_price)) {
         $error = "Please fill in all required fields.";
     } else {
-        // Check if SKU already exists
-        $check_sku = "SELECT product_id FROM products WHERE sku = ?";
+        // Check if SKU already exists for another product
+        $check_sku = "SELECT product_id FROM products WHERE sku = ? AND product_id != ?";
         $check_stmt = mysqli_prepare($connection, $check_sku);
-        mysqli_stmt_bind_param($check_stmt, "s", $sku);
+        mysqli_stmt_bind_param($check_stmt, "si", $sku, $product_id);
         mysqli_stmt_execute($check_stmt);
         mysqli_stmt_store_result($check_stmt);
         
@@ -55,7 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
             $error = "SKU already exists. Please use a different SKU.";
         } else {
             // Handle image upload
-            $image_url = null;
+            $image_url = $product['image_url']; // Keep existing image by default
+            
             if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] == 0) {
                 $target_dir = "../assets/images/products/";
                 
@@ -76,6 +99,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
                         $target_file = $target_dir . $new_filename;
                         
                         if (move_uploaded_file($_FILES["product_image"]["tmp_name"], $target_file)) {
+                            // Delete old image if exists
+                            if (!empty($product['image_url']) && file_exists('../' . $product['image_url'])) {
+                                unlink('../' . $product['image_url']);
+                            }
                             $image_url = 'assets/images/products/' . $new_filename;
                         } else {
                             $error = "Failed to upload image.";
@@ -86,31 +113,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
                 }
             }
             
-            // If no error, insert product
+            // Handle image removal
+            if (isset($_POST['remove_image']) && $_POST['remove_image'] == '1') {
+                if (!empty($product['image_url']) && file_exists('../' . $product['image_url'])) {
+                    unlink('../' . $product['image_url']);
+                }
+                $image_url = null;
+            }
+            
+            // If no error, update product
             if (empty($error)) {
-                $insert_query = "INSERT INTO products (
-                    product_name, sku, description, short_description, category_id,
-                    unit_price, cost_price, quantity_in_stock, min_stock_level, max_stock_level,
-                    image_url, is_featured, is_active, created_at, total_sold, rating, review_count
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 0, 0.00, 0)";
+                $update_query = "UPDATE products SET 
+                    product_name = ?, 
+                    sku = ?, 
+                    description = ?, 
+                    short_description = ?, 
+                    category_id = ?, 
+                    unit_price = ?, 
+                    cost_price = ?, 
+                    quantity_in_stock = ?, 
+                    min_stock_level = ?, 
+                    max_stock_level = ?, 
+                    image_url = ?, 
+                    is_featured = ?, 
+                    is_active = ?,
+                    updated_at = NOW()
+                    WHERE product_id = ?";
                 
-                $stmt = mysqli_prepare($connection, $insert_query);
+                $stmt = mysqli_prepare($connection, $update_query);
                 mysqli_stmt_bind_param($stmt, "ssssiddiiissii", 
                     $product_name, $sku, $description, $short_description, $category_id,
                     $unit_price, $cost_price, $quantity_in_stock, $min_stock_level, $max_stock_level,
-                    $image_url, $is_featured, $is_active
+                    $image_url, $is_featured, $is_active, $product_id
                 );
                 
                 if (mysqli_stmt_execute($stmt)) {
-                    $product_id = mysqli_insert_id($connection);
-                    
                     // Log the action
-                    error_log("Admin {$_SESSION['admin_name']} added product ID: $product_id");
+                    error_log("Admin {$_SESSION['admin_name']} updated product ID: $product_id");
                     
-                    header("Location: products.php?success=Product added successfully");
+                    header("Location: products.php?success=Product updated successfully");
                     exit();
                 } else {
-                    $error = "Failed to add product. " . mysqli_error($connection);
+                    $error = "Failed to update product. " . mysqli_error($connection);
                 }
             }
         }
@@ -130,14 +174,14 @@ include '../includes/admin_header.php';
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <div>
                         <h1 class="page-title">
-                            <i class="fas fa-plus-circle me-2"></i>
-                            Add New Product
+                            <i class="fas fa-edit me-2"></i>
+                            Edit Product
                         </h1>
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb">
                                 <li class="breadcrumb-item"><a href="dashboard.php">Dashboard</a></li>
                                 <li class="breadcrumb-item"><a href="products.php">Products</a></li>
-                                <li class="breadcrumb-item active" aria-current="page">Add Product</li>
+                                <li class="breadcrumb-item active" aria-current="page">Edit Product</li>
                             </ol>
                         </nav>
                     </div>
@@ -164,7 +208,7 @@ include '../includes/admin_header.php';
     </div>
     <?php endif; ?>
 
-    <!-- Add Product Form -->
+    <!-- Edit Product Form -->
     <div class="row">
         <div class="col-12">
             <div class="form-card">
@@ -178,14 +222,14 @@ include '../includes/admin_header.php';
                                 <div class="mb-3">
                                     <label for="product_name" class="form-label">Product Name *</label>
                                     <input type="text" class="form-control" id="product_name" name="product_name" 
-                                           value="<?php echo isset($_POST['product_name']) ? htmlspecialchars($_POST['product_name']) : ''; ?>" required>
+                                           value="<?php echo htmlspecialchars($product['product_name']); ?>" required>
                                 </div>
                                 
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="sku" class="form-label">SKU *</label>
                                         <input type="text" class="form-control" id="sku" name="sku" 
-                                               value="<?php echo isset($_POST['sku']) ? htmlspecialchars($_POST['sku']) : ''; ?>" required>
+                                               value="<?php echo htmlspecialchars($product['sku']); ?>" required>
                                         <small class="text-muted">Unique product identifier</small>
                                     </div>
                                     
@@ -194,9 +238,10 @@ include '../includes/admin_header.php';
                                         <select class="form-select" id="category_id" name="category_id" required>
                                             <option value="">Select Category</option>
                                             <?php if ($categories_result): ?>
+                                                <?php mysqli_data_seek($categories_result, 0); ?>
                                                 <?php while ($category = mysqli_fetch_assoc($categories_result)): ?>
                                                 <option value="<?php echo $category['category_id']; ?>" 
-                                                    <?php echo (isset($_POST['category_id']) && $_POST['category_id'] == $category['category_id']) ? 'selected' : ''; ?>>
+                                                    <?php echo ($product['category_id'] == $category['category_id']) ? 'selected' : ''; ?>>
                                                     <?php echo htmlspecialchars($category['category_name']); ?>
                                                 </option>
                                                 <?php endwhile; ?>
@@ -207,13 +252,13 @@ include '../includes/admin_header.php';
                                 
                                 <div class="mb-3">
                                     <label for="short_description" class="form-label">Short Description</label>
-                                    <textarea class="form-control" id="short_description" name="short_description" rows="2"><?php echo isset($_POST['short_description']) ? htmlspecialchars($_POST['short_description']) : ''; ?></textarea>
+                                    <textarea class="form-control" id="short_description" name="short_description" rows="2"><?php echo htmlspecialchars($product['short_description'] ?? ''); ?></textarea>
                                     <small class="text-muted">Brief description for product listings (max 500 characters)</small>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="description" class="form-label">Full Description</label>
-                                    <textarea class="form-control" id="description" name="description" rows="5"><?php echo isset($_POST['description']) ? htmlspecialchars($_POST['description']) : ''; ?></textarea>
+                                    <textarea class="form-control" id="description" name="description" rows="5"><?php echo htmlspecialchars($product['description'] ?? ''); ?></textarea>
                                 </div>
                             </div>
                         </div>
@@ -226,14 +271,14 @@ include '../includes/admin_header.php';
                                 <div class="mb-3">
                                     <label for="unit_price" class="form-label">Unit Price ($) *</label>
                                     <input type="number" class="form-control" id="unit_price" name="unit_price" 
-                                           value="<?php echo isset($_POST['unit_price']) ? htmlspecialchars($_POST['unit_price']) : ''; ?>" 
+                                           value="<?php echo htmlspecialchars($product['unit_price']); ?>" 
                                            step="0.01" min="0" required>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="cost_price" class="form-label">Cost Price ($)</label>
                                     <input type="number" class="form-control" id="cost_price" name="cost_price" 
-                                           value="<?php echo isset($_POST['cost_price']) ? htmlspecialchars($_POST['cost_price']) : ''; ?>" 
+                                           value="<?php echo htmlspecialchars($product['cost_price'] ?? ''); ?>" 
                                            step="0.01" min="0">
                                     <small class="text-muted">Your purchase cost</small>
                                 </div>
@@ -245,7 +290,7 @@ include '../includes/admin_header.php';
                                 <div class="mb-3">
                                     <label for="quantity_in_stock" class="form-label">Quantity in Stock</label>
                                     <input type="number" class="form-control" id="quantity_in_stock" name="quantity_in_stock" 
-                                           value="<?php echo isset($_POST['quantity_in_stock']) ? htmlspecialchars($_POST['quantity_in_stock']) : '0'; ?>" 
+                                           value="<?php echo htmlspecialchars($product['quantity_in_stock']); ?>" 
                                            min="0">
                                 </div>
                                 
@@ -253,14 +298,14 @@ include '../includes/admin_header.php';
                                     <div class="col-6 mb-3">
                                         <label for="min_stock_level" class="form-label">Min Stock Level</label>
                                         <input type="number" class="form-control" id="min_stock_level" name="min_stock_level" 
-                                               value="<?php echo isset($_POST['min_stock_level']) ? htmlspecialchars($_POST['min_stock_level']) : '10'; ?>" 
+                                               value="<?php echo htmlspecialchars($product['min_stock_level']); ?>" 
                                                min="0">
                                     </div>
                                     
                                     <div class="col-6 mb-3">
                                         <label for="max_stock_level" class="form-label">Max Stock Level</label>
                                         <input type="number" class="form-control" id="max_stock_level" name="max_stock_level" 
-                                               value="<?php echo isset($_POST['max_stock_level']) ? htmlspecialchars($_POST['max_stock_level']) : '100'; ?>" 
+                                               value="<?php echo htmlspecialchars($product['max_stock_level']); ?>" 
                                                min="0">
                                     </div>
                                 </div>
@@ -269,8 +314,23 @@ include '../includes/admin_header.php';
                             <div class="form-section">
                                 <h5 class="section-title">Product Image</h5>
                                 
+                                <?php if (!empty($product['image_url'])): ?>
+                                <div class="current-image mb-3">
+                                    <label class="form-label">Current Image</label>
+                                    <div class="image-preview">
+                                        <img src="../<?php echo $product['image_url']; ?>" alt="Current product image">
+                                        <div class="image-actions">
+                                            <label class="btn btn-sm btn-light">
+                                                <input type="checkbox" name="remove_image" value="1" id="remove_image" style="display: none;">
+                                                <i class="fas fa-trash-alt me-1"></i> Remove Image
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+                                
                                 <div class="mb-3">
-                                    <label for="product_image" class="form-label">Upload Image</label>
+                                    <label for="product_image" class="form-label"><?php echo !empty($product['image_url']) ? 'Change Image' : 'Upload Image'; ?></label>
                                     <input type="file" class="form-control" id="product_image" name="product_image" accept="image/*">
                                     <small class="text-muted">Allowed: JPG, PNG, GIF, WEBP (Max: 2MB)</small>
                                 </div>
@@ -285,7 +345,8 @@ include '../includes/admin_header.php';
                                 
                                 <div class="mb-2">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                               <?php echo $product['is_active'] ? 'checked' : ''; ?>>
                                         <label class="form-check-label" for="is_active">
                                             Active (visible in store)
                                         </label>
@@ -294,11 +355,40 @@ include '../includes/admin_header.php';
                                 
                                 <div class="mb-2">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured">
+                                        <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured"
+                                               <?php echo $product['is_featured'] ? 'checked' : ''; ?>>
                                         <label class="form-check-label" for="is_featured">
                                             Featured Product
                                         </label>
                                     </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h5 class="section-title">Statistics</h5>
+                                <div class="stats-display">
+                                    <div class="stat-row">
+                                        <span class="stat-label">Total Sold:</span>
+                                        <span class="stat-value"><?php echo $product['total_sold'] ?? 0; ?></span>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span class="stat-label">Rating:</span>
+                                        <span class="stat-value"><?php echo $product['rating'] ?? 0; ?> / 5</span>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span class="stat-label">Reviews:</span>
+                                        <span class="stat-value"><?php echo $product['review_count'] ?? 0; ?></span>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span class="stat-label">Created:</span>
+                                        <span class="stat-value"><?php echo date('M d, Y', strtotime($product['created_at'])); ?></span>
+                                    </div>
+                                    <?php if (!empty($product['updated_at'])): ?>
+                                    <div class="stat-row">
+                                        <span class="stat-label">Updated:</span>
+                                        <span class="stat-value"><?php echo date('M d, Y', strtotime($product['updated_at'])); ?></span>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -308,12 +398,15 @@ include '../includes/admin_header.php';
                     <div class="row mt-4">
                         <div class="col-12">
                             <div class="form-actions">
-                                <button type="submit" name="add_product" class="btn btn-primary">
-                                    <i class="fas fa-save me-2"></i>Save Product
+                                <button type="submit" name="edit_product" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Update Product
                                 </button>
                                 <a href="products.php" class="btn btn-light">
                                     <i class="fas fa-times me-2"></i>Cancel
                                 </a>
+                                <button type="button" class="btn btn-danger ms-auto" onclick="confirmDelete(<?php echo $product_id; ?>)">
+                                    <i class="fas fa-trash-alt me-2"></i>Delete Product
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -328,7 +421,7 @@ include '../includes/admin_header.php';
 
 <!-- Page-specific scripts -->
 <script>
-// Image preview
+// Image preview for new image
 document.getElementById('product_image').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
@@ -347,23 +440,45 @@ document.getElementById('product_image').addEventListener('change', function(e) 
             preview.style.display = 'block';
         }
         reader.readAsDataURL(file);
+        
+        // Uncheck remove image if it was checked
+        document.getElementById('remove_image').checked = false;
     } else {
         document.getElementById('imagePreview').style.display = 'none';
     }
 });
 
-// Auto-generate SKU from product name (optional)
-document.getElementById('product_name').addEventListener('blur', function() {
-    const skuField = document.getElementById('sku');
-    if (!skuField.value) {
-        // Generate SKU from product name: uppercase, remove special chars, add timestamp
-        const productName = this.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-        if (productName) {
-            const timestamp = Date.now().toString().slice(-6);
-            skuField.value = productName.substring(0, 8) + '-' + timestamp;
+// Handle remove image checkbox
+document.getElementById('remove_image')?.addEventListener('change', function(e) {
+    if (this.checked) {
+        // Clear file input and hide preview
+        document.getElementById('product_image').value = '';
+        document.getElementById('imagePreview').style.display = 'none';
+        
+        // Hide current image container
+        const currentImage = document.querySelector('.current-image');
+        if (currentImage) {
+            currentImage.style.opacity = '0.5';
+        }
+    } else {
+        const currentImage = document.querySelector('.current-image');
+        if (currentImage) {
+            currentImage.style.opacity = '1';
         }
     }
 });
+
+// Style the remove image checkbox as a button
+document.getElementById('remove_image')?.addEventListener('click', function(e) {
+    // The checkbox is hidden, this is just to handle the label click
+});
+
+// Confirm delete
+function confirmDelete(productId) {
+    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+        window.location.href = 'delete_product.php?id=' + productId;
+    }
+}
 
 // Form validation
 document.querySelector('.product-form').addEventListener('submit', function(e) {
@@ -396,10 +511,34 @@ document.querySelector('.product-form').addEventListener('submit', function(e) {
         return false;
     }
 });
+
+// Warn before leaving if form is dirty
+let formChanged = false;
+
+document.querySelectorAll('.product-form input, .product-form textarea, .product-form select').forEach(input => {
+    input.addEventListener('change', () => {
+        formChanged = true;
+    });
+    input.addEventListener('keyup', () => {
+        formChanged = true;
+    });
+});
+
+window.addEventListener('beforeunload', function(e) {
+    if (formChanged) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+    }
+});
+
+// Reset form changed flag after submission
+document.querySelector('.product-form').addEventListener('submit', function() {
+    formChanged = false;
+});
 </script>
 
 <style>
-/* Add Product Page Specific Styles */
+/* Edit Product Page Specific Styles */
 
 /* Form Card */
 .form-card {
@@ -452,9 +591,62 @@ document.querySelector('.product-form').addEventListener('submit', function(e) {
     outline: none;
 }
 
-.form-control:disabled, .form-control[readonly] {
+/* Current Image */
+.current-image {
+    margin-bottom: 1rem;
+}
+
+.image-preview {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
     background: var(--light);
-    cursor: not-allowed;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    position: relative;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 8px;
+}
+
+.image-actions {
+    margin-top: 0.5rem;
+}
+
+.image-actions .btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+/* Statistics Display */
+.stats-display {
+    background: var(--light);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: var(--dark);
 }
 
 /* Form Check */
@@ -468,22 +660,13 @@ document.querySelector('.product-form').addEventListener('submit', function(e) {
     cursor: pointer;
 }
 
-/* Image Preview */
-.image-preview {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: var(--light);
-    border-radius: 8px;
-    text-align: center;
-    border: 1px dashed var(--border);
-}
-
 /* Form Actions */
 .form-actions {
     display: flex;
     gap: 1rem;
     padding-top: 1rem;
     border-top: 1px solid var(--border);
+    align-items: center;
 }
 
 .btn {
@@ -517,6 +700,22 @@ document.querySelector('.product-form').addEventListener('submit', function(e) {
     border-color: var(--dark-gray);
 }
 
+.btn-danger {
+    background: var(--danger);
+    border: none;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #bb2d3b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220,53,69,0.3);
+}
+
+.ms-auto {
+    margin-left: auto;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .form-card {
@@ -529,6 +728,10 @@ document.querySelector('.product-form').addEventListener('submit', function(e) {
     
     .btn {
         width: 100%;
+    }
+    
+    .ms-auto {
+        margin-left: 0;
     }
 }
 

@@ -1,5 +1,5 @@
 <?php
-// admin/orders.php - Orders Management Page
+// admin/orders.php - Orders Management Page with Full Responsiveness
 
 // Include central session handler from root
 require_once '../session_handler.php';
@@ -164,26 +164,26 @@ include '../includes/admin_header.php';
 ?>
 
 <!-- Page Content -->
-<div class="container-fluid">
+<div class="container-fluid px-3 px-md-4 px-lg-5">
     <!-- Page Header -->
-    <div class="row mb-4">
+    <div class="row mb-3 mb-md-4">
         <div class="col-12">
-            <div class="page-header-box">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="page-header-box p-3 p-md-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                     <div>
-                        <h1 class="page-title">
+                        <h1 class="page-title h3 h2-md mb-1">
                             <i class="fas fa-shopping-cart me-2"></i>
                             Orders Management
                         </h1>
                         <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
+                            <ol class="breadcrumb flex-wrap mb-0">
                                 <li class="breadcrumb-item"><a href="dashboard.php">Dashboard</a></li>
                                 <li class="breadcrumb-item active" aria-current="page">Orders</li>
                             </ol>
                         </nav>
                     </div>
                     <div class="page-actions">
-                        <button class="btn btn-primary" onclick="window.location.reload()">
+                        <button class="btn btn-primary w-100 w-md-auto" onclick="window.location.reload()">
                             <i class="fas fa-sync-alt me-2"></i>Refresh
                         </button>
                     </div>
@@ -194,7 +194,7 @@ include '../includes/admin_header.php';
 
     <!-- Alert Messages -->
     <?php if (!empty($message)): ?>
-    <div class="row">
+    <div class="row mb-3 mb-md-4">
         <div class="col-12">
             <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">
                 <i class="fas fa-<?php echo $message_type == 'success' ? 'check-circle' : 'exclamation-circle'; ?> me-2"></i>
@@ -205,16 +205,18 @@ include '../includes/admin_header.php';
     </div>
     <?php endif; ?>
 
-    <!-- Status Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-2 col-md-4 col-6 mb-3">
-            <div class="status-card all">
-                <div class="status-icon">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <div class="status-details">
-                    <span class="status-label">All Orders</span>
-                    <span class="status-count"><?php echo $total_records; ?></span>
+    <!-- Status Summary Cards - Responsive Grid -->
+    <div class="row g-2 g-md-3 g-lg-4 mb-3 mb-md-4">
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-2 mb-md-3">
+            <div class="status-card all p-2 p-md-3">
+                <div class="d-flex align-items-center gap-2 gap-md-3">
+                    <div class="status-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="status-details">
+                        <span class="status-label small text-uppercase">All Orders</span>
+                        <span class="status-count h4 h3-md mb-0"><?php echo $total_records; ?></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -232,34 +234,36 @@ include '../includes/admin_header.php';
         foreach ($status_summary as $status => $data):
             $color = $status_colors[$status] ?? 'secondary';
         ?>
-        <div class="col-xl-2 col-md-4 col-6 mb-3">
-            <div class="status-card <?php echo $color; ?>">
-                <div class="status-icon">
-                    <i class="fas fa-<?php 
-                        echo $status == 'Pending' ? 'clock' : 
-                            ($status == 'Processing' ? 'cog' : 
-                            ($status == 'Shipped' ? 'truck' : 
-                            ($status == 'Delivered' ? 'check-circle' : 
-                            ($status == 'Cancelled' ? 'times-circle' : 'undo-alt')))); 
-                    ?>"></i>
-                </div>
-                <div class="status-details">
-                    <span class="status-label"><?php echo $status; ?></span>
-                    <span class="status-count"><?php echo $data['count']; ?></span>
-                    <span class="status-total">$<?php echo number_format($data['total'] ?? 0, 2); ?></span>
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-2 mb-md-3">
+            <div class="status-card <?php echo $color; ?> p-2 p-md-3">
+                <div class="d-flex align-items-center gap-2 gap-md-3">
+                    <div class="status-icon">
+                        <i class="fas fa-<?php 
+                            echo $status == 'Pending' ? 'clock' : 
+                                ($status == 'Processing' ? 'cog' : 
+                                ($status == 'Shipped' ? 'truck' : 
+                                ($status == 'Delivered' ? 'check-circle' : 
+                                ($status == 'Cancelled' ? 'times-circle' : 'undo-alt')))); 
+                        ?>"></i>
+                    </div>
+                    <div class="status-details">
+                        <span class="status-label small text-uppercase"><?php echo $status; ?></span>
+                        <span class="status-count h4 h3-md mb-0 d-block"><?php echo $data['count']; ?></span>
+                        <span class="status-total small d-none d-sm-block">$<?php echo number_format($data['total'] ?? 0, 2); ?></span>
+                    </div>
                 </div>
             </div>
         </div>
         <?php endforeach; ?>
     </div>
 
-    <!-- Filters and Search -->
-    <div class="row mb-4">
+    <!-- Filters and Search - Responsive -->
+    <div class="row mb-3 mb-md-4">
         <div class="col-12">
-            <div class="filters-card">
+            <div class="filters-card p-3 p-md-4">
                 <form method="GET" action="" class="filters-form">
-                    <div class="row g-3">
-                        <div class="col-lg-4 col-md-6">
+                    <div class="row g-2 g-md-3">
+                        <div class="col-12 col-md-6 col-lg-4">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
                                 <input type="text" class="form-control" name="search" 
@@ -267,7 +271,7 @@ include '../includes/admin_header.php';
                                        value="<?php echo htmlspecialchars($search); ?>">
                             </div>
                         </div>
-                        <div class="col-lg-2 col-md-6">
+                        <div class="col-6 col-md-3 col-lg-2">
                             <select class="form-select" name="status">
                                 <option value="">All Status</option>
                                 <option value="Pending" <?php echo $status_filter == 'Pending' ? 'selected' : ''; ?>>Pending</option>
@@ -278,21 +282,21 @@ include '../includes/admin_header.php';
                                 <option value="Refunded" <?php echo $status_filter == 'Refunded' ? 'selected' : ''; ?>>Refunded</option>
                             </select>
                         </div>
-                        <div class="col-lg-2 col-md-6">
+                        <div class="col-6 col-md-3 col-lg-2">
                             <input type="date" class="form-control" name="date_from" 
                                    placeholder="From Date" value="<?php echo $date_from; ?>">
                         </div>
-                        <div class="col-lg-2 col-md-6">
+                        <div class="col-6 col-md-3 col-lg-2">
                             <input type="date" class="form-control" name="date_to" 
                                    placeholder="To Date" value="<?php echo $date_to; ?>">
                         </div>
-                        <div class="col-lg-2 col-12">
-                            <div class="filter-actions">
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="fas fa-filter me-2"></i>Apply Filters
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <div class="filter-actions d-flex flex-column flex-sm-row gap-2">
+                                <button type="submit" class="btn btn-primary flex-fill">
+                                    <i class="fas fa-filter me-2"></i>Apply
                                 </button>
-                                <a href="orders.php" class="btn btn-light w-100 mt-2 mt-lg-0">
-                                    <i class="fas fa-times me-2"></i>Clear
+                                <a href="orders.php" class="btn btn-light flex-fill">
+                                    <i class="fas fa-times"></i>
                                 </a>
                             </div>
                         </div>
@@ -302,36 +306,36 @@ include '../includes/admin_header.php';
         </div>
     </div>
 
-    <!-- Orders Table -->
+    <!-- Orders Table - Fully Responsive -->
     <div class="row">
         <div class="col-12">
             <div class="table-card">
-                <div class="table-header">
+                <div class="table-header p-3 p-md-4 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
                     <div class="table-title">
-                        <h5><i class="fas fa-list me-2"></i>Orders List</h5>
-                        <span class="records-count">Showing <?php echo min($offset + 1, $total_records); ?> - <?php echo min($offset + $records_per_page, $total_records); ?> of <?php echo $total_records; ?> records</span>
+                        <h5 class="h5 mb-1"><i class="fas fa-list me-2"></i>Orders List</h5>
+                        <span class="records-count small">Showing <?php echo min($offset + 1, $total_records); ?> - <?php echo min($offset + $records_per_page, $total_records); ?> of <?php echo $total_records; ?> records</span>
                     </div>
-                    <div class="table-actions">
-                        <button class="btn btn-light" onclick="exportToCSV()">
+                    <div class="table-actions d-flex gap-2 w-100 w-md-auto">
+                        <button class="btn btn-light btn-sm flex-fill flex-md-grow-0" onclick="exportToCSV()">
                             <i class="fas fa-download me-2"></i>Export
                         </button>
-                        <button class="btn btn-light" onclick="window.print()">
+                        <button class="btn btn-light btn-sm flex-fill flex-md-grow-0" onclick="window.print()">
                             <i class="fas fa-print me-2"></i>Print
                         </button>
                     </div>
                 </div>
                 
                 <div class="table-responsive">
-                    <table class="table orders-table">
+                    <table class="table orders-table align-middle">
                         <thead>
                             <tr>
-                                <th>Order #</th>
+                                <th class="d-none d-sm-table-cell">Order #</th>
                                 <th>Customer</th>
-                                <th>Date</th>
-                                <th>Items</th>
+                                <th class="d-none d-md-table-cell">Date</th>
+                                <th class="d-none d-sm-table-cell">Items</th>
                                 <th>Total</th>
                                 <th>Status</th>
-                                <th>Payment</th>
+                                <th class="d-none d-lg-table-cell">Payment</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -339,20 +343,23 @@ include '../includes/admin_header.php';
                             <?php if (mysqli_num_rows($orders_result) > 0): ?>
                                 <?php while ($order = mysqli_fetch_assoc($orders_result)): ?>
                                 <tr>
-                                    <td>
+                                    <td class="d-none d-sm-table-cell">
                                         <span class="order-number">#<?php echo $order['order_number']; ?></span>
                                     </td>
                                     <td>
                                         <div class="customer-info">
-                                            <div class="customer-name">
+                                            <div class="customer-name fw-bold">
                                                 <?php echo htmlspecialchars($order['first_name'] . ' ' . $order['last_name']); ?>
                                             </div>
-                                            <div class="customer-email small text-muted">
+                                            <div class="customer-email small text-muted d-none d-md-block">
                                                 <?php echo $order['email']; ?>
+                                            </div>
+                                            <div class="order-number-mobile d-sm-none small text-primary">
+                                                #<?php echo $order['order_number']; ?>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td class="d-none d-md-table-cell">
                                         <div class="order-date">
                                             <?php echo date('M d, Y', strtotime($order['order_date'])); ?>
                                         </div>
@@ -360,15 +367,16 @@ include '../includes/admin_header.php';
                                             <?php echo date('h:i A', strtotime($order['order_date'])); ?>
                                         </div>
                                     </td>
-                                    <td class="text-center">
+                                    <td class="d-none d-sm-table-cell text-center">
                                         <span class="item-count"><?php echo $order['item_count']; ?></span>
                                     </td>
                                     <td>
-                                        <span class="order-total">$<?php echo number_format($order['total_amount'], 2); ?></span>
+                                        <span class="order-total fw-bold">$<?php echo number_format($order['total_amount'], 2); ?></span>
                                     </td>
                                     <td>
-                                        <select class="status-select status-<?php echo strtolower($order['status']); ?>" 
-                                                onchange="updateOrderStatus(<?php echo $order['order_id']; ?>, this.value)">
+                                        <select class="status-select status-<?php echo strtolower($order['status']); ?> form-select form-select-sm" 
+                                                onchange="updateOrderStatus(<?php echo $order['order_id']; ?>, this.value)"
+                                                style="min-width: 100px;">
                                             <option value="Pending" <?php echo $order['status'] == 'Pending' ? 'selected' : ''; ?>>Pending</option>
                                             <option value="Processing" <?php echo $order['status'] == 'Processing' ? 'selected' : ''; ?>>Processing</option>
                                             <option value="Shipped" <?php echo $order['status'] == 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
@@ -377,13 +385,11 @@ include '../includes/admin_header.php';
                                             <option value="Refunded" <?php echo $order['status'] == 'Refunded' ? 'selected' : ''; ?>>Refunded</option>
                                         </select>
                                     </td>
-                                    <td>
-                                        <span class="payment-method">
-                                            <?php echo $order['payment_method'] ?? 'N/A'; ?>
-                                        </span>
+                                    <td class="d-none d-lg-table-cell">
+                                        <span class="payment-method"><?php echo $order['payment_method'] ?? 'N/A'; ?></span>
                                     </td>
                                     <td>
-                                        <div class="action-buttons">
+                                        <div class="action-buttons d-flex gap-1 gap-md-2">
                                             <a href="order-detail.php?id=<?php echo $order['order_id']; ?>" 
                                                class="btn-action view" title="View Order">
                                                 <i class="fas fa-eye"></i>
@@ -396,6 +402,21 @@ include '../includes/admin_header.php';
                                                     onclick="confirmDelete(<?php echo $order['order_id']; ?>)">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Mobile Order Details Row (hidden on desktop) -->
+                                <tr class="d-md-none">
+                                    <td colspan="8" class="p-0 border-0">
+                                        <div class="mobile-order-details p-2 mb-2 bg-light rounded small">
+                                            <div class="d-flex justify-content-between">
+                                                <span><strong>Date:</strong> <?php echo date('M d, Y h:i A', strtotime($order['order_date'])); ?></span>
+                                                <span><strong>Items:</strong> <?php echo $order['item_count']; ?></span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mt-1">
+                                                <span><strong>Payment:</strong> <?php echo $order['payment_method'] ?? 'N/A'; ?></span>
+                                                <span><strong>Email:</strong> <?php echo $order['email']; ?></span>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -413,11 +434,11 @@ include '../includes/admin_header.php';
                     </table>
                 </div>
                 
-                <!-- Pagination -->
+                <!-- Pagination - Responsive -->
                 <?php if ($total_pages > 1): ?>
-                <div class="table-footer">
+                <div class="table-footer p-3 p-md-4">
                     <nav aria-label="Orders pagination">
-                        <ul class="pagination justify-content-center mb-0">
+                        <ul class="pagination justify-content-center flex-wrap mb-0">
                             <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
                                 <a class="page-link" href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>&date_from=<?php echo urlencode($date_from); ?>&date_to=<?php echo urlencode($date_to); ?>">
                                     <i class="fas fa-chevron-left"></i>
@@ -450,41 +471,39 @@ include '../includes/admin_header.php';
         </div>
     </div>
 
-    <!-- Recent Activity -->
-    <div class="row mt-4">
+    <!-- Recent Activity - Responsive -->
+    <div class="row mt-3 mt-md-4 g-3 g-md-4">
         <div class="col-md-6">
-            <div class="activity-card">
-                <div class="activity-header">
-                    <h5><i class="fas fa-history me-2"></i>Recent Orders</h5>
+            <div class="activity-card h-100">
+                <div class="activity-header p-3 p-md-4">
+                    <h5 class="h5 mb-0"><i class="fas fa-history me-2"></i>Recent Orders</h5>
                 </div>
-                <div class="activity-body">
+                <div class="activity-body p-2 p-md-3">
                     <?php if (mysqli_num_rows($recent_activity_result) > 0): ?>
                         <?php while ($activity = mysqli_fetch_assoc($recent_activity_result)): ?>
-                        <div class="activity-item">
-                            <div class="activity-icon <?php echo strtolower($activity['status']); ?>">
-                                <i class="fas fa-<?php 
-                                    echo $activity['status'] == 'Pending' ? 'clock' : 
-                                        ($activity['status'] == 'Processing' ? 'cog' : 
-                                        ($activity['status'] == 'Shipped' ? 'truck' : 
-                                        ($activity['status'] == 'Delivered' ? 'check-circle' : 
-                                        ($activity['status'] == 'Cancelled' ? 'times-circle' : 'undo-alt')))); 
-                                ?>"></i>
-                            </div>
-                            <div class="activity-details">
-                                <div class="activity-title">
-                                    <strong>#<?php echo $activity['order_number']; ?></strong> - <?php echo htmlspecialchars($activity['customer']); ?>
+                        <div class="activity-item p-2 p-md-3">
+                            <div class="d-flex align-items-start gap-2 gap-md-3">
+                                <div class="activity-icon <?php echo strtolower($activity['status']); ?>">
+                                    <i class="fas fa-<?php 
+                                        echo $activity['status'] == 'Pending' ? 'clock' : 
+                                            ($activity['status'] == 'Processing' ? 'cog' : 
+                                            ($activity['status'] == 'Shipped' ? 'truck' : 
+                                            ($activity['status'] == 'Delivered' ? 'check-circle' : 
+                                            ($activity['status'] == 'Cancelled' ? 'times-circle' : 'undo-alt')))); 
+                                    ?>"></i>
                                 </div>
-                                <div class="activity-meta">
-                                    <span class="badge status-<?php echo strtolower($activity['status']); ?>">
-                                        <?php echo $activity['status']; ?>
-                                    </span>
-                                    <span class="activity-time">
-                                        <i class="far fa-clock me-1"></i>
-                                        <?php echo date('M d, h:i A', strtotime($activity['order_date'])); ?>
-                                    </span>
-                                    <span class="activity-amount">
-                                        $<?php echo number_format($activity['total_amount'], 2); ?>
-                                    </span>
+                                <div class="activity-details flex-grow-1">
+                                    <div class="activity-title d-flex flex-wrap justify-content-between align-items-center">
+                                        <strong>#<?php echo $activity['order_number']; ?></strong>
+                                        <span class="badge status-<?php echo strtolower($activity['status']); ?>">
+                                            <?php echo $activity['status']; ?>
+                                        </span>
+                                    </div>
+                                    <div class="activity-meta small text-muted d-flex flex-wrap gap-2 mt-1">
+                                        <span><i class="far fa-user me-1"></i><?php echo htmlspecialchars($activity['customer']); ?></span>
+                                        <span><i class="far fa-clock me-1"></i><?php echo date('M d, h:i A', strtotime($activity['order_date'])); ?></span>
+                                        <span class="fw-bold text-primary">$<?php echo number_format($activity['total_amount'], 2); ?></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -497,11 +516,11 @@ include '../includes/admin_header.php';
         </div>
         
         <div class="col-md-6">
-            <div class="stats-card">
-                <div class="stats-header">
-                    <h5><i class="fas fa-chart-pie me-2"></i>Order Statistics</h5>
+            <div class="stats-card h-100">
+                <div class="stats-header p-3 p-md-4">
+                    <h5 class="h5 mb-0"><i class="fas fa-chart-pie me-2"></i>Order Statistics</h5>
                 </div>
-                <div class="stats-body">
+                <div class="stats-body p-3 p-md-4">
                     <canvas id="orderStatsChart" height="250"></canvas>
                 </div>
             </div>
@@ -520,8 +539,6 @@ include '../includes/admin_header.php';
 <?php include '../includes/admin_footer.php'; ?>
 
 <!-- Page-specific scripts -->
-<?php $extra_scripts = ''; ?>
-
 <script>
 // Update order status
 function updateOrderStatus(orderId, status) {
@@ -548,18 +565,20 @@ function confirmDelete(orderId) {
 function exportToCSV() {
     // Collect table data
     const rows = [];
-    const table = document.querySelector('.orders-table');
-    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+    const headers = ['Order #', 'Customer', 'Email', 'Date', 'Items', 'Total', 'Status', 'Payment'];
     rows.push(headers);
     
-    const dataRows = Array.from(table.querySelectorAll('tbody tr'));
-    dataRows.forEach(row => {
+    const tableRows = document.querySelectorAll('.orders-table tbody tr:not(.d-md-none)');
+    tableRows.forEach(row => {
+        if (row.classList.contains('d-md-none')) return;
+        
         const rowData = [
-            row.querySelector('.order-number')?.textContent.trim() || '',
+            row.querySelector('.order-number')?.textContent.replace('#', '') || '',
             row.querySelector('.customer-name')?.textContent.trim() || '',
+            row.querySelector('.customer-email')?.textContent.trim() || '',
             row.querySelector('.order-date')?.textContent.trim() || '',
-            row.querySelector('.item-count')?.textContent.trim() || '',
-            row.querySelector('.order-total')?.textContent.trim() || '',
+            row.querySelector('.item-count')?.textContent.trim() || '0',
+            row.querySelector('.order-total')?.textContent.replace('$', '') || '0',
             row.querySelector('.status-select')?.value || '',
             row.querySelector('.payment-method')?.textContent.trim() || ''
         ];
@@ -567,7 +586,7 @@ function exportToCSV() {
     });
     
     // Create CSV
-    let csv = rows.map(row => row.join(',')).join('\n');
+    let csv = rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -619,7 +638,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     position: 'bottom',
                     labels: {
                         boxWidth: 12,
-                        padding: 15
+                        padding: 15,
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
                     }
                 },
                 tooltip: {
@@ -638,29 +660,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Responsive chart update on window resize
+window.addEventListener('resize', function() {
+    // Chart.js handles responsiveness automatically
+    console.log('Window resized');
+});
 </script>
 
 <style>
-/* ===== ORDERS PAGE SPECIFIC STYLES ===== */
+/* ===== FULLY RESPONSIVE ORDERS PAGE STYLES ===== */
 
 /* Page Header */
 .page-header-box {
     background: white;
-    padding: 1.5rem;
     border-radius: 12px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
 }
 
 .page-title {
-    font-size: 1.8rem;
     font-weight: 600;
     color: var(--dark);
-    margin-bottom: 0.5rem;
 }
 
 .breadcrumb {
-    margin-bottom: 0;
     background: transparent;
     padding: 0;
 }
@@ -674,18 +698,15 @@ document.addEventListener('DOMContentLoaded', function() {
     color: var(--dark-gray);
 }
 
-/* Status Cards */
+/* Status Cards - Fully Responsive */
 .status-card {
     background: white;
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
     transition: var(--transition);
     position: relative;
     overflow: hidden;
+    height: 100%;
 }
 
 .status-card:hover {
@@ -711,13 +732,22 @@ document.addEventListener('DOMContentLoaded', function() {
 .status-card.secondary::before { background: var(--secondary); }
 
 .status-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+    .status-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.5rem;
+    }
 }
 
 .status-card.all .status-icon {
@@ -757,27 +787,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .status-details {
     flex: 1;
+    min-width: 0; /* Prevent text overflow */
 }
 
 .status-label {
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.7rem;
     color: var(--dark-gray);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (min-width: 768px) {
+    .status-label {
+        font-size: 0.85rem;
+    }
 }
 
 .status-count {
-    display: block;
-    font-size: 1.5rem;
     font-weight: 700;
     color: var(--dark);
     line-height: 1.2;
 }
 
 .status-total {
-    display: block;
-    font-size: 0.85rem;
+    display: none;
     color: var(--dark-gray);
+}
+
+@media (min-width: 576px) {
+    .status-total {
+        display: block;
+        font-size: 0.75rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .status-total {
+        font-size: 0.85rem;
+    }
 }
 
 /* Filters Card */
@@ -785,7 +835,6 @@ document.addEventListener('DOMContentLoaded', function() {
     background: white;
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 1.5rem;
     box-shadow: var(--shadow-sm);
 }
 
@@ -809,15 +858,11 @@ document.addEventListener('DOMContentLoaded', function() {
     height: 42px;
 }
 
-.filters-form .form-select {
-    height: 42px;
+.filters-form .form-select,
+.filters-form .form-control {
     border: 1px solid var(--border);
     border-radius: 8px;
-}
-
-.filters-form .filter-actions {
-    display: flex;
-    gap: 0.5rem;
+    height: 42px;
 }
 
 /* Table Card */
@@ -830,53 +875,67 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .table-header {
-    padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
+    background: var(--light);
 }
 
 .table-title h5 {
-    margin: 0;
     color: var(--dark);
     font-weight: 600;
 }
 
 .records-count {
-    font-size: 0.85rem;
     color: var(--dark-gray);
-    margin-left: 1rem;
 }
 
-.table-actions {
-    display: flex;
-    gap: 0.5rem;
+.table-actions .btn-light {
+    background: white;
+    border: 1px solid var(--border);
+    color: var(--dark);
+    transition: var(--transition);
 }
 
-/* Orders Table */
+.table-actions .btn-light:hover {
+    background: var(--light);
+    border-color: var(--dark-gray);
+}
+
+/* Orders Table - Fully Responsive */
 .orders-table {
     margin: 0;
+    width: 100%;
 }
 
 .orders-table thead th {
     background: var(--light);
     color: var(--dark);
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 2px solid var(--border);
-    padding: 1rem;
+    padding: 0.75rem;
     white-space: nowrap;
 }
 
+@media (min-width: 768px) {
+    .orders-table thead th {
+        font-size: 0.85rem;
+        padding: 1rem;
+    }
+}
+
 .orders-table tbody td {
-    padding: 1rem;
+    padding: 0.75rem;
     vertical-align: middle;
     border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+    .orders-table tbody td {
+        padding: 1rem;
+    }
 }
 
 .orders-table tbody tr:hover {
@@ -888,35 +947,62 @@ document.addEventListener('DOMContentLoaded', function() {
     font-weight: 600;
     color: var(--primary);
     font-family: var(--font-mono);
+    font-size: 0.9rem;
+}
+
+.order-number-mobile {
+    color: var(--primary);
+    margin-top: 0.25rem;
 }
 
 /* Customer Info */
 .customer-info {
-    line-height: 1.4;
+    line-height: 1.3;
 }
 
 .customer-name {
-    font-weight: 500;
     color: var(--dark);
+    font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+    .customer-name {
+        font-size: 1rem;
+    }
 }
 
 /* Order Date */
 .order-date {
     font-weight: 500;
     color: var(--dark);
+    font-size: 0.9rem;
+}
+
+.order-time {
+    font-size: 0.8rem;
 }
 
 /* Item Count */
 .item-count {
     display: inline-block;
-    width: 30px;
-    height: 30px;
+    min-width: 28px;
+    height: 28px;
     background: var(--light);
     border-radius: 50%;
     text-align: center;
-    line-height: 30px;
+    line-height: 28px;
     font-weight: 600;
     color: var(--dark);
+    font-size: 0.85rem;
+}
+
+@media (min-width: 768px) {
+    .item-count {
+        min-width: 30px;
+        height: 30px;
+        line-height: 30px;
+        font-size: 0.9rem;
+    }
 }
 
 /* Order Total */
@@ -924,17 +1010,27 @@ document.addEventListener('DOMContentLoaded', function() {
     font-weight: 700;
     color: var(--primary);
     font-family: var(--font-mono);
+    font-size: 0.95rem;
 }
 
 /* Status Select */
 .status-select {
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 0.4rem 1rem;
-    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
     transition: var(--transition);
+    min-width: 90px;
+}
+
+@media (min-width: 768px) {
+    .status-select {
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+        min-width: 100px;
+    }
 }
 
 .status-select.status-pending {
@@ -976,23 +1072,37 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Payment Method */
 .payment-method {
     background: var(--light);
-    padding: 0.3rem 0.8rem;
+    padding: 0.25rem 0.6rem;
     border-radius: 20px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--dark);
     white-space: nowrap;
+    display: inline-block;
+}
+
+@media (min-width: 768px) {
+    .payment-method {
+        padding: 0.3rem 0.8rem;
+        font-size: 0.8rem;
+    }
 }
 
 /* Action Buttons */
 .action-buttons {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.25rem;
+}
+
+@media (min-width: 768px) {
+    .action-buttons {
+        gap: 0.5rem;
+    }
 }
 
 .btn-action {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
     border: 1px solid var(--border);
     background: white;
     color: var(--dark-gray);
@@ -1001,6 +1111,17 @@ document.addEventListener('DOMContentLoaded', function() {
     justify-content: center;
     cursor: pointer;
     transition: var(--transition);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+@media (min-width: 768px) {
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
 }
 
 .btn-action:hover {
@@ -1023,42 +1144,12 @@ document.addEventListener('DOMContentLoaded', function() {
     border-color: var(--danger);
 }
 
-/* Table Footer */
-.table-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border);
+/* Mobile Order Details */
+.mobile-order-details {
     background: var(--light);
-}
-
-/* Pagination */
-.pagination {
-    margin: 0;
-}
-
-.page-link {
-    border: 1px solid var(--border);
-    color: var(--dark);
-    padding: 0.5rem 1rem;
-    margin: 0 0.2rem;
     border-radius: 8px;
-}
-
-.page-link:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-.page-item.active .page-link {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
-}
-
-.page-item.disabled .page-link {
-    color: var(--dark-gray);
-    pointer-events: none;
-    background: var(--light);
+    margin: 0 0.5rem 0.5rem 0.5rem;
+    font-size: 0.8rem;
 }
 
 /* Activity Card */
@@ -1068,29 +1159,19 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 12px;
     overflow: hidden;
     box-shadow: var(--shadow-sm);
-    height: 100%;
 }
 
 .activity-header {
-    padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--border);
+    background: var(--light);
 }
 
 .activity-header h5 {
-    margin: 0;
     color: var(--dark);
     font-weight: 600;
 }
 
-.activity-body {
-    padding: 1rem;
-}
-
 .activity-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem;
     border-bottom: 1px solid var(--border);
     transition: var(--transition);
 }
@@ -1104,13 +1185,22 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .activity-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
 }
 
 .activity-icon.pending {
@@ -1143,36 +1233,8 @@ document.addEventListener('DOMContentLoaded', function() {
     color: var(--secondary);
 }
 
-.activity-details {
-    flex: 1;
-}
-
-.activity-title {
-    margin-bottom: 0.3rem;
-    color: var(--dark);
-}
-
 .activity-meta {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.activity-meta .badge {
-    padding: 0.3rem 0.8rem;
-    font-size: 0.75rem;
-}
-
-.activity-time {
-    font-size: 0.8rem;
     color: var(--dark-gray);
-}
-
-.activity-amount {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--primary);
 }
 
 /* Stats Card */
@@ -1182,25 +1244,75 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 12px;
     overflow: hidden;
     box-shadow: var(--shadow-sm);
-    height: 100%;
 }
 
 .stats-header {
-    padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--border);
+    background: var(--light);
 }
 
 .stats-header h5 {
-    margin: 0;
     color: var(--dark);
     font-weight: 600;
 }
 
 .stats-body {
-    padding: 1.5rem;
+    min-height: 250px;
+}
+
+/* Pagination */
+.pagination {
+    gap: 0.25rem;
+}
+
+.page-link {
+    border: 1px solid var(--border);
+    color: var(--dark);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: var(--transition);
+    font-size: 0.85rem;
+}
+
+@media (min-width: 768px) {
+    .page-link {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+}
+
+.page-link:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.page-item.active .page-link {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.page-item.disabled .page-link {
+    color: var(--dark-gray);
+    pointer-events: none;
+    background: var(--light);
 }
 
 /* Badge Styles */
+.badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+}
+
+@media (min-width: 768px) {
+    .badge {
+        padding: 0.3rem 0.8rem;
+        font-size: 0.75rem;
+    }
+}
+
 .badge.status-pending {
     background: #fff3cd;
     color: #856404;
@@ -1231,111 +1343,14 @@ document.addEventListener('DOMContentLoaded', function() {
     color: #41464b;
 }
 
-/* Button Styles */
-.btn-primary {
-    background: var(--primary);
-    border: none;
-    color: white;
-    padding: 0.6rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: var(--transition);
-}
-
-.btn-primary:hover {
-    background: var(--primary-light);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-.btn-light {
-    background: white;
-    border: 1px solid var(--border);
-    color: var(--dark);
-    padding: 0.6rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: var(--transition);
-}
-
-.btn-light:hover {
-    background: var(--light);
-    border-color: var(--dark-gray);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .page-title {
-        font-size: 1.5rem;
-    }
-    
-    .status-card {
-        padding: 1rem;
-    }
-    
-    .status-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
-    }
-    
-    .status-count {
-        font-size: 1.2rem;
-    }
-    
-    .table-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .table-actions {
-        width: 100%;
-        justify-content: flex-end;
-    }
-    
-    .filters-form .filter-actions {
-        flex-direction: column;
-    }
-    
-    .activity-meta {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.3rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .page-header-box {
-        padding: 1rem;
-    }
-    
-    .table-header {
-        padding: 1rem;
-    }
-    
-    .table-actions {
-        flex-wrap: wrap;
-    }
-    
-    .btn-action {
-        width: 28px;
-        height: 28px;
-    }
-    
-    .pagination .page-link {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.85rem;
-    }
-}
-
 /* Print Styles */
 @media print {
-    .filters-card,
-    .table-actions,
+    .btn,
+    .filter-actions,
     .action-buttons,
     .status-select,
-    .btn,
-    .back-to-top {
+    .back-to-top,
+    .stats-card {
         display: none !important;
     }
     
@@ -1356,6 +1371,20 @@ document.addEventListener('DOMContentLoaded', function() {
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
+    }
+}
+
+/* Touch-friendly adjustments */
+@media (hover: none) and (pointer: coarse) {
+    .btn-action,
+    .page-link,
+    .status-select {
+        padding: 0.5rem;
+    }
+    
+    .btn-action {
+        width: 36px;
+        height: 36px;
     }
 }
 </style>

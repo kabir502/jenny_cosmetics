@@ -5,7 +5,7 @@
         </main> <!-- End main-content -->
     </div> <!-- End admin-wrapper -->
 
-    <!-- Footer - Now properly placed outside the admin-wrapper -->
+    <!-- Footer -->
     <footer class="admin-footer">
         <div class="container-fluid px-3 px-md-4">
             <div class="row align-items-center gy-3 gy-md-0">
@@ -382,21 +382,17 @@
             --light: #f8fafc;
             --light-gray: #e9ecef;
             --border: #dee2e6;
-            --footer-height: 80px;
         }
 
-        /* Footer Styles - Now properly positioned */
+        /* Footer Styles */
         .admin-footer {
             background: linear-gradient(to right, var(--light), white);
             padding: 1.5rem 0;
-            border-top: 2px solid var(--border);
+            border-top: 1px solid var(--border);
             font-size: 0.95rem;
             color: var(--dark);
             box-shadow: 0 -4px 6px rgba(0,0,0,0.02);
             width: 100%;
-            margin-top: auto;
-            position: relative;
-            z-index: 100;
             clear: both;
         }
 
@@ -450,7 +446,7 @@
             font-size: 0.9rem;
         }
 
-        /* Modal Styles - Unchanged */
+        /* Modal Styles */
         .modal-content {
             border: none;
             border-radius: 12px;
@@ -760,21 +756,6 @@
             .toast-container {
                 display: none !important;
             }
-        }
-
-        /* Ensure footer stays at bottom */
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .admin-wrapper {
-            flex: 1 0 auto;
-        }
-
-        .admin-footer {
-            flex-shrink: 0;
         }
     </style>
 </body>

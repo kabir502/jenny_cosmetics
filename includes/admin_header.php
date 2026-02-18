@@ -52,9 +52,6 @@ $admin_email = $_SESSION['admin_email'] ?? '';
             --sidebar-width: 280px;
             --header-height: 70px;
             --transition: all 0.3s ease;
-            
-            /* Footer height for proper spacing */
-            --footer-height: 80px;
         }
 
         * {
@@ -69,16 +66,12 @@ $admin_email = $_SESSION['admin_email'] ?? '';
             color: var(--dark);
             line-height: 1.6;
             overflow-x: hidden;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
         /* Layout */
         .admin-wrapper {
             display: flex;
-            min-height: calc(100vh - var(--footer-height));
-            flex: 1;
+            min-height: 100vh;
         }
 
         /* Sidebar */
@@ -194,11 +187,9 @@ $admin_email = $_SESSION['admin_email'] ?? '';
         .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
-            min-height: 100%;
+            min-height: 100vh;
             background: var(--light);
             transition: var(--transition);
-            display: flex;
-            flex-direction: column;
         }
 
         /* Top Navbar */
@@ -380,7 +371,6 @@ $admin_email = $_SESSION['admin_email'] ?? '';
         /* Content Wrapper */
         .content-wrapper {
             padding: 2rem;
-            flex: 1;
         }
 
         /* Dropdown Menu */
