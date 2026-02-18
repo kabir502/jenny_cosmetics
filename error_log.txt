@@ -497,3 +497,43 @@ Stack trace:
 #0 C:\xampp\htdocs\jenny\admin\categories.php(253): mysqli_query(Object(mysqli), 'SELECT \r\n      ...')
 #1 {main}
   thrown in C:\xampp\htdocs\jenny\admin\categories.php on line 253
+[16-Feb-2026 08:47:20 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: No connection could be made because the target machine actively refused it in C:\xampp\htdocs\jenny\config\database.php:43
+Stack trace:
+#0 C:\xampp\htdocs\jenny\config\database.php(43): mysqli_connect('localhost', 'root', Object(SensitiveParameterValue), 'jenny_cosmetics...')
+#1 C:\xampp\htdocs\jenny\index.php(6): require_once('C:\\xampp\\htdocs...')
+#2 {main}
+  thrown in C:\xampp\htdocs\jenny\config\database.php on line 43
+[16-Feb-2026 08:48:42 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: No connection could be made because the target machine actively refused it in C:\xampp\htdocs\jenny\config\database.php:43
+Stack trace:
+#0 C:\xampp\htdocs\jenny\config\database.php(43): mysqli_connect('localhost', 'root', Object(SensitiveParameterValue), 'jenny_cosmetics...')
+#1 C:\xampp\htdocs\jenny\index.php(6): require_once('C:\\xampp\\htdocs...')
+#2 {main}
+  thrown in C:\xampp\htdocs\jenny\config\database.php on line 43
+[16-Feb-2026 08:50:20 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: No connection could be made because the target machine actively refused it in C:\xampp\htdocs\jenny_cosmetics\config\database.php:43
+Stack trace:
+#0 C:\xampp\htdocs\jenny_cosmetics\config\database.php(43): mysqli_connect('localhost', 'root', Object(SensitiveParameterValue), 'jenny_cosmetics...')
+#1 C:\xampp\htdocs\jenny_cosmetics\index.php(6): require_once('C:\\xampp\\htdocs...')
+#2 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\config\database.php on line 43
+[16-Feb-2026 08:13:21 UTC] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\xampp\htdocs\jenny_cosmetics\admin\inventory.php on line 308
+[16-Feb-2026 08:13:21 UTC] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\xampp\htdocs\jenny_cosmetics\admin\inventory.php on line 344
+[16-Feb-2026 08:14:49 UTC] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\xampp\htdocs\jenny_cosmetics\admin\inventory.php on line 344
+[16-Feb-2026 08:15:17 UTC] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\xampp\htdocs\jenny_cosmetics\admin\inventory.php on line 308
+[16-Feb-2026 08:15:17 UTC] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\xampp\htdocs\jenny_cosmetics\admin\inventory.php on line 344
+[16-Feb-2026 18:59:39 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'o.user_id' in 'field list' in C:\xampp\htdocs\jenny_cosmetics\admin\analytics.php:348
+Stack trace:
+#0 C:\xampp\htdocs\jenny_cosmetics\admin\analytics.php(348): mysqli_query(Object(mysqli), 'SELECT \r\n      ...')
+#1 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\admin\analytics.php on line 348
+[16-Feb-2026 19:02:23 UTC] PHP Fatal error:  Uncaught DivisionByZeroError: Division by zero in C:\xampp\htdocs\jenny_cosmetics\admin\analytics.php:872
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\admin\analytics.php on line 872
+[16-Feb-2026 19:02:46 UTC] PHP Fatal error:  Uncaught DivisionByZeroError: Division by zero in C:\xampp\htdocs\jenny_cosmetics\admin\analytics.php:872
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\admin\analytics.php on line 872
+[16-Feb-2026 19:10:07 UTC] PHP Fatal error:  Uncaught DivisionByZeroError: Division by zero in C:\xampp\htdocs\jenny_cosmetics\admin\analytics.php:872
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics\admin\analytics.php on line 872

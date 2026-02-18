@@ -5,22 +5,22 @@
         </main> <!-- End main-content -->
     </div> <!-- End admin-wrapper -->
 
-    <!-- Footer -->
+    <!-- Footer - Now properly placed outside the admin-wrapper -->
     <footer class="admin-footer">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <p class="footer-copyright mb-0">
+        <div class="container-fluid px-3 px-md-4">
+            <div class="row align-items-center gy-3 gy-md-0">
+                <div class="col-12 col-md-6 text-center text-md-start">
+                    <p class="footer-copyright mb-0 small">
                         &copy; <?php echo date('Y'); ?> <strong><?php echo defined('SITE_NAME') ? SITE_NAME : 'Jenny\'s Cosmetics & Jewelry'; ?></strong>.
-                        All rights reserved.
+                        <span class="d-block d-sm-inline mt-1 mt-sm-0 ms-sm-1">All rights reserved.</span>
                     </p>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="footer-links mb-0">
+                <div class="col-12 col-md-6 text-center text-md-end">
+                    <p class="footer-links mb-0 d-flex flex-wrap align-items-center justify-content-center justify-content-md-end gap-2 gap-sm-3">
                         <span class="version-badge">v1.0.0</span>
-                        <span class="separator">|</span>
+                        <span class="separator d-none d-sm-inline">|</span>
                         <a href="#" class="footer-link" data-bs-toggle="modal" data-bs-target="#aboutModal">
-                            <i class="fas fa-info-circle"></i> About
+                            <i class="fas fa-info-circle"></i> <span class="d-inline">About</span>
                         </a>
                     </p>
                 </div>
@@ -30,7 +30,7 @@
 
     <!-- About Modal -->
     <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="aboutModalLabel">
@@ -41,7 +41,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="text-center mb-4">
-                        <div class="about-icon-wrapper">
+                        <div class="about-icon-wrapper mx-auto">
                             <i class="fas fa-gem"></i>
                         </div>
                         <h4 class="mt-3 mb-1">Admin Panel</h4>
@@ -103,9 +103,9 @@
                         <p class="small text-muted">You will be redirected to the login page.</p>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <a href="../admin/logout.php" class="btn btn-warning">
+                <div class="modal-footer d-flex justify-content-center justify-content-sm-end gap-2">
+                    <button type="button" class="btn btn-light w-100 w-sm-auto" data-bs-dismiss="modal">Cancel</button>
+                    <a href="../admin/logout.php" class="btn btn-warning w-100 w-sm-auto">
                         <i class="fas fa-sign-out-alt me-2"></i>Logout
                     </a>
                 </div>
@@ -131,9 +131,9 @@
                         <p class="small text-danger">This action cannot be undone.</p>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                <div class="modal-footer d-flex justify-content-center justify-content-sm-end gap-2">
+                    <button type="button" class="btn btn-light w-100 w-sm-auto" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger w-100 w-sm-auto" id="confirmDeleteBtn">
                         <i class="fas fa-trash-alt me-2"></i>Delete
                     </button>
                 </div>
@@ -149,7 +149,7 @@
     </div>
 
     <!-- Back to Top Button -->
-    <button class="back-to-top" id="backToTop" onclick="scrollToTop()">
+    <button class="back-to-top" id="backToTop" onclick="scrollToTop()" aria-label="Back to top">
         <i class="fas fa-arrow-up"></i>
     </button>
 
@@ -231,7 +231,7 @@
         // Notification system
         function showNotification(message, type = 'success') {
             if (!$('#toastContainer').length) {
-                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-2 p-sm-3"></div>');
             }
             
             const toastId = 'toast_' + Date.now();
@@ -311,7 +311,8 @@
                         next: "Next",
                         previous: "Previous"
                     }
-                }
+                },
+                responsive: true
             });
         }
 
@@ -332,6 +333,29 @@
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('mobile-hidden');
         }
+
+        // Handle responsive behavior
+        function handleResponsive() {
+            const width = window.innerWidth;
+            const backToTop = document.getElementById('backToTop');
+            
+            if (backToTop) {
+                if (width <= 576) {
+                    backToTop.style.width = '40px';
+                    backToTop.style.height = '40px';
+                    backToTop.style.bottom = '15px';
+                    backToTop.style.right = '15px';
+                } else {
+                    backToTop.style.width = '50px';
+                    backToTop.style.height = '50px';
+                    backToTop.style.bottom = '30px';
+                    backToTop.style.right = '30px';
+                }
+            }
+        }
+
+        window.addEventListener('resize', handleResponsive);
+        handleResponsive();
 
         $(document).ready(function() {
             console.log('Admin panel loaded successfully');
@@ -358,23 +382,27 @@
             --light: #f8fafc;
             --light-gray: #e9ecef;
             --border: #dee2e6;
+            --footer-height: 80px;
         }
 
-        /* Footer Styles */
+        /* Footer Styles - Now properly positioned */
         .admin-footer {
             background: linear-gradient(to right, var(--light), white);
             padding: 1.5rem 0;
-            margin-top: 3rem;
-            border-top: 1px solid var(--border);
+            border-top: 2px solid var(--border);
             font-size: 0.95rem;
             color: var(--dark);
             box-shadow: 0 -4px 6px rgba(0,0,0,0.02);
             width: 100%;
+            margin-top: auto;
+            position: relative;
+            z-index: 100;
             clear: both;
         }
 
         .footer-copyright {
             color: var(--dark-gray);
+            line-height: 1.6;
         }
 
         .footer-copyright strong {
@@ -384,9 +412,10 @@
 
         .footer-links {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: flex-end;
-            gap: 0.75rem;
+            gap: 0.75rem 1rem;
         }
 
         .version-badge {
@@ -421,7 +450,7 @@
             font-size: 0.9rem;
         }
 
-        /* Modal Styles - Corporate */
+        /* Modal Styles - Unchanged */
         .modal-content {
             border: none;
             border-radius: 12px;
@@ -457,6 +486,7 @@
             background: var(--light);
             border-top: 1px solid var(--border);
             padding: 1.25rem 1.5rem;
+            gap: 0.5rem;
         }
 
         /* About Modal Specific */
@@ -524,6 +554,8 @@
             padding: 0.5rem 0;
             color: var(--dark);
             border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
         }
 
         .system-info-list li:last-child {
@@ -682,12 +714,17 @@
                 width: 100%;
                 margin-bottom: 0.25rem;
             }
+            
+            .toast {
+                min-width: 300px;
+            }
         }
 
         @media (max-width: 576px) {
             .footer-links {
                 flex-wrap: wrap;
                 gap: 0.5rem;
+                flex-direction: column;
             }
 
             .separator {
@@ -704,6 +741,15 @@
             .modal-body {
                 padding: 1.5rem;
             }
+            
+            .toast {
+                min-width: auto;
+                width: calc(100% - 2rem);
+            }
+            
+            .modal-footer .btn {
+                width: 100%;
+            }
         }
 
         /* Print Styles */
@@ -714,6 +760,21 @@
             .toast-container {
                 display: none !important;
             }
+        }
+
+        /* Ensure footer stays at bottom */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .admin-wrapper {
+            flex: 1 0 auto;
+        }
+
+        .admin-footer {
+            flex-shrink: 0;
         }
     </style>
 </body>

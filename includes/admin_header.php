@@ -52,6 +52,9 @@ $admin_email = $_SESSION['admin_email'] ?? '';
             --sidebar-width: 280px;
             --header-height: 70px;
             --transition: all 0.3s ease;
+            
+            /* Footer height for proper spacing */
+            --footer-height: 80px;
         }
 
         * {
@@ -66,12 +69,16 @@ $admin_email = $_SESSION['admin_email'] ?? '';
             color: var(--dark);
             line-height: 1.6;
             overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Layout */
         .admin-wrapper {
             display: flex;
-            min-height: 100vh;
+            min-height: calc(100vh - var(--footer-height));
+            flex: 1;
         }
 
         /* Sidebar */
@@ -187,9 +194,11 @@ $admin_email = $_SESSION['admin_email'] ?? '';
         .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
-            min-height: 100vh;
+            min-height: 100%;
             background: var(--light);
             transition: var(--transition);
+            display: flex;
+            flex-direction: column;
         }
 
         /* Top Navbar */
@@ -371,6 +380,7 @@ $admin_email = $_SESSION['admin_email'] ?? '';
         /* Content Wrapper */
         .content-wrapper {
             padding: 2rem;
+            flex: 1;
         }
 
         /* Dropdown Menu */
@@ -557,7 +567,7 @@ $admin_email = $_SESSION['admin_email'] ?? '';
                     <div class="nav-section-title">Reports</div>
                     <ul class="nav">
                         <li class="nav-item">
-                            <a href="../admin/sales-report.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'sales-report.php' ? 'active' : ''; ?>">
+                            <a href="../admin/sales_report.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'sales_report.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Sales Report</span>
                             </a>
@@ -660,5 +670,5 @@ $admin_email = $_SESSION['admin_email'] ?? '';
                 </div>
             </header>
             
-            <!-- Content Wrapper -->
+            <!-- Content Wrapper - Page content will be injected here -->
             <div class="content-wrapper">
