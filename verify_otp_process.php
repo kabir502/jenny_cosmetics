@@ -1,8 +1,14 @@
 <?php
-// verify_otp_process.php
+// verify_otp_process.php - Process OTP Verification
+
+// Start session safely
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Include database and constants
 require_once 'config/database.php';
 require_once 'config/constants.php';
-session_start();
 
 // Check if user has signup data in session
 if (!isset($_SESSION['signup_data'])) {
@@ -11,7 +17,7 @@ if (!isset($_SESSION['signup_data'])) {
 }
 
 // Check if form was submitted
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['verify_otp'])) {
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: verify_otp.php");
     exit();
 }
@@ -29,9 +35,6 @@ if (!preg_match('/^\d{6}$/', $user_otp)) {
 $stored_otp = $_SESSION['signup_data']['otp'] ?? '';
 $otp_expiry = $_SESSION['signup_data']['otp_expiry'] ?? 0;
 
-// Debug - remove in production
-// error_log("User OTP: '$user_otp', Stored OTP: '$stored_otp', Type: " . gettype($stored_otp));
-
 // Check if OTP expired
 if (time() > $otp_expiry) {
     unset($_SESSION['signup_data']);
@@ -39,8 +42,18 @@ if (time() > $otp_expiry) {
     exit();
 }
 
-// FIX: Convert both to strings and trim for comparison
-if (trim((string)$user_otp) !== trim((string)$stored_otp)) {
+// CRITICAL FIX: Convert to string and compare exactly
+// Sometimes the OTP is stored as integer vs string
+$user_otp_str = (string)$user_otp;
+$stored_otp_str = (string)$stored_otp;
+
+// Debug logging (remove in production)
+error_log("User OTP: '$user_otp_str' (type: " . gettype($user_otp_str) . ")");
+error_log("Stored OTP: '$stored_otp_str' (type: " . gettype($stored_otp_str) . ")");
+
+// Simple string comparison
+if ($user_otp_str !== $stored_otp_str) {
+    error_log("OTP mismatch");
     header("Location: verify_otp.php?error=Invalid OTP. Please try again.");
     exit();
 }
@@ -56,13 +69,20 @@ $query = "INSERT INTO users (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), 1)";
 
 $stmt = mysqli_prepare($connection, $query);
+
+if (!$stmt) {
+    error_log("Prepare failed: " . mysqli_error($connection));
+    header("Location: signup.php?error=Registration failed. Please try again.");
+    exit();
+}
+
 mysqli_stmt_bind_param(
     $stmt, 
     "ssssssss", 
     $user_data['first_name'],
     $user_data['last_name'],
     $user_data['email'],
-    $user_data['password'], // This should already be hashed from signup
+    $user_data['password'],
     $user_data['phone_cell'],
     $user_data['address_street'],
     $user_data['address_city'],
@@ -85,34 +105,7 @@ if (mysqli_stmt_execute($stmt)) {
     $_SESSION['logged_in'] = true;
     $_SESSION['login_time'] = time();
     
-    // Optional: Send welcome email using PHPMailer
-    /*
-    $mail = new PHPMailer(true);
-    try {
-        // Server settings
-        $mail->isSMTP();
-        $mail->Host       = SMTP_HOST;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = SMTP_USER;
-        $mail->Password   = SMTP_PASS;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = SMTP_PORT;
-        
-        // Recipients
-        $mail->setFrom(SMTP_USER, SITE_NAME);
-        $mail->addAddress($user_data['email'], $user_data['first_name']);
-        
-        // Content
-        $mail->isHTML(true);
-        $mail->Subject = "Welcome to " . SITE_NAME;
-        $mail->Body    = "<h1>Welcome " . $user_data['first_name'] . "!</h1><p>Thank you for registering.</p>";
-        
-        $mail->send();
-    } catch (Exception $e) {
-        error_log("Welcome email failed: " . $mail->ErrorInfo);
-    }
-    */
-    
+    // Redirect to home with success message
     header("Location: index.php?signup=success");
     exit();
     
@@ -120,7 +113,7 @@ if (mysqli_stmt_execute($stmt)) {
     error_log("Database error in signup: " . mysqli_error($connection));
     
     // Check if email already exists
-    if (mysqli_errno($connection) == 1062) { // Duplicate entry error
+    if (mysqli_errno($connection) == 1062) {
         header("Location: signup.php?error=Email already registered. Please login.");
     } else {
         header("Location: signup.php?error=Registration failed. Please try again.");

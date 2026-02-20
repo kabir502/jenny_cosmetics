@@ -257,10 +257,10 @@ if (isset($_GET['action']) && $_GET['action'] == 'run_backup') {
     
     // Get database configuration
     $db_config = [
-        'host' => DB_HOST,
-        'user' => DB_USER,
-        'pass' => DB_PASS,
-        'name' => DB_NAME
+        'host' => defined('DB_HOST') ? DB_HOST : 'localhost',
+        'user' => defined('DB_USER') ? DB_USER : 'root',
+        'pass' => defined('DB_PASS') ? DB_PASS : '',
+        'name' => defined('DB_NAME') ? DB_NAME : 'jenny_cosmetics_db'
     ];
     
     // Create backup command
@@ -276,20 +276,25 @@ if (isset($_GET['action']) && $_GET['action'] == 'run_backup') {
     system($command, $output);
     
     if ($output === 0) {
-        // Log backup in database
-        $insert_query = "INSERT INTO site_backups (backup_name, backup_type, file_path, file_size_mb, created_by, created_at, notes) 
-                        VALUES (?, 'Database Only', ?, ?, ?, NOW(), 'Manual backup')";
-        
+        // Log backup in database (check if table exists)
         $file_size = file_exists($backup_path) ? round(filesize($backup_path) / 1024 / 1024, 2) : 0;
-        $insert_stmt = mysqli_prepare($connection, $insert_query);
-        mysqli_stmt_bind_param($insert_stmt, "ssdi", $backup_file, $backup_path, $file_size, $_SESSION['admin_id']);
-        mysqli_stmt_execute($insert_stmt);
+        
+        // Check if site_backups table exists
+        $table_check = mysqli_query($connection, "SHOW TABLES LIKE 'site_backups'");
+        if (mysqli_num_rows($table_check) > 0) {
+            $insert_query = "INSERT INTO site_backups (backup_name, backup_type, file_path, file_size_mb, created_by, created_at, notes) 
+                            VALUES (?, 'Database Only', ?, ?, ?, NOW(), 'Manual backup')";
+            
+            $insert_stmt = mysqli_prepare($connection, $insert_query);
+            mysqli_stmt_bind_param($insert_stmt, "ssdi", $backup_file, $backup_path, $file_size, $_SESSION['admin_id']);
+            mysqli_stmt_execute($insert_stmt);
+        }
         
         $message = "Database backup created successfully.";
         $message_type = 'success';
         error_log("Admin {$_SESSION['admin_name']} created database backup: $backup_file");
     } else {
-        $message = "Failed to create database backup.";
+        $message = "Failed to create database backup. Make sure mysqldump is available.";
         $message_type = 'danger';
     }
 }
@@ -310,34 +315,43 @@ if (isset($_GET['action']) && $_GET['action'] == 'test_email') {
 // GET CURRENT SETTINGS
 // =============================================================================
 
-$settings_query = "SELECT setting_key, setting_value, setting_type FROM system_settings";
-$settings_result = mysqli_query($connection, $settings_query);
-
 $settings = [];
-while ($row = mysqli_fetch_assoc($settings_result)) {
-    $key = $row['setting_key'];
-    $value = $row['setting_value'];
-    $type = $row['setting_type'];
+
+// Check if system_settings table exists
+$table_check = mysqli_query($connection, "SHOW TABLES LIKE 'system_settings'");
+if (mysqli_num_rows($table_check) > 0) {
+    $settings_query = "SELECT setting_key, setting_value, setting_type FROM system_settings";
+    $settings_result = mysqli_query($connection, $settings_query);
     
-    // Convert value based on type
-    if ($type == 'boolean') {
-        $value = $value == '1' || $value == 'true' ? true : false;
-    } elseif ($type == 'integer') {
-        $value = (int)$value;
-    } elseif ($type == 'json') {
-        $value = json_decode($value, true);
+    while ($row = mysqli_fetch_assoc($settings_result)) {
+        $key = $row['setting_key'];
+        $value = $row['setting_value'];
+        $type = $row['setting_type'];
+        
+        // Convert value based on type
+        if ($type == 'boolean') {
+            $value = $value == '1' || $value == 'true' ? true : false;
+        } elseif ($type == 'integer') {
+            $value = (int)$value;
+        } elseif ($type == 'json') {
+            $value = json_decode($value, true);
+        }
+        
+        $settings[$key] = $value;
     }
-    
-    $settings[$key] = $value;
 }
 
 // Get backup history
-$backups_query = "SELECT b.*, a.username as created_by_name 
-                  FROM site_backups b
-                  LEFT JOIN administrators a ON b.created_by = a.admin_id
-                  ORDER BY b.created_at DESC 
-                  LIMIT 10";
-$backups_result = mysqli_query($connection, $backups_query);
+$backups_result = null;
+$table_check = mysqli_query($connection, "SHOW TABLES LIKE 'site_backups'");
+if (mysqli_num_rows($table_check) > 0) {
+    $backups_query = "SELECT b.*, a.username as created_by_name 
+                      FROM site_backups b
+                      LEFT JOIN administrators a ON b.created_by = a.admin_id
+                      ORDER BY b.created_at DESC 
+                      LIMIT 10";
+    $backups_result = mysqli_query($connection, $backups_query);
+}
 
 // Include admin header
 include '../includes/admin_header.php';
@@ -638,7 +652,7 @@ include '../includes/admin_header.php';
                                         <div class="password-input-group">
                                             <input type="password" class="form-control" id="smtp_pass" name="smtp_pass" 
                                                    value="<?php echo htmlspecialchars($settings['smtp_pass'] ?? ''); ?>">
-                                            <button type="button" class="password-toggle" onclick="togglePassword('smtp_pass')">
+                                            <button type="button" class="password-toggle" onclick="togglePassword('smtp_pass', this)">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         </div>
@@ -647,7 +661,7 @@ include '../includes/admin_header.php';
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">&nbsp;</label>
                                         <div>
-                                            <a href="?action=test_email" class="btn btn-info">
+                                            <a href="?action=test_email" class="btn btn-info" onclick="return confirm('Send test email to <?php echo $_SESSION['admin_email'] ?? 'admin@example.com'; ?>?')">
                                                 <i class="fas fa-paper-plane me-2"></i>Send Test Email
                                             </a>
                                         </div>
@@ -746,7 +760,7 @@ include '../includes/admin_header.php';
                                         <div class="password-input-group">
                                             <input type="password" class="form-control" id="stripe_secret_key" name="stripe_secret_key" 
                                                    value="<?php echo htmlspecialchars($settings['stripe_secret_key'] ?? ''); ?>">
-                                            <button type="button" class="password-toggle" onclick="togglePassword('stripe_secret_key')">
+                                            <button type="button" class="password-toggle" onclick="togglePassword('stripe_secret_key', this)">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         </div>
@@ -854,7 +868,7 @@ include '../includes/admin_header.php';
                                         <div class="password-input-group">
                                             <input type="password" class="form-control" id="recaptcha_secret_key" name="recaptcha_secret_key" 
                                                    value="<?php echo htmlspecialchars($settings['recaptcha_secret_key'] ?? ''); ?>">
-                                            <button type="button" class="password-toggle" onclick="togglePassword('recaptcha_secret_key')">
+                                            <button type="button" class="password-toggle" onclick="togglePassword('recaptcha_secret_key', this)">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         </div>
@@ -932,17 +946,19 @@ include '../includes/admin_header.php';
                                                 <?php while ($backup = mysqli_fetch_assoc($backups_result)): ?>
                                                 <div class="backup-item">
                                                     <div class="backup-info">
-                                                        <div class="backup-name"><?php echo $backup['backup_name']; ?></div>
+                                                        <div class="backup-name"><?php echo htmlspecialchars($backup['backup_name'] ?? 'Unknown'); ?></div>
                                                         <div class="backup-meta">
-                                                            <span><i class="far fa-calendar"></i> <?php echo date('M d, Y H:i', strtotime($backup['created_at'])); ?></span>
-                                                            <span><i class="fas fa-database"></i> <?php echo $backup['file_size_mb']; ?> MB</span>
-                                                            <span><i class="fas fa-user"></i> <?php echo $backup['created_by_name'] ?? 'System'; ?></span>
+                                                            <span><i class="far fa-calendar"></i> <?php echo isset($backup['created_at']) ? date('M d, Y H:i', strtotime($backup['created_at'])) : 'N/A'; ?></span>
+                                                            <span><i class="fas fa-database"></i> <?php echo htmlspecialchars($backup['file_size_mb'] ?? '0'); ?> MB</span>
+                                                            <span><i class="fas fa-user"></i> <?php echo htmlspecialchars($backup['created_by_name'] ?? 'System'); ?></span>
                                                         </div>
                                                     </div>
                                                     <div class="backup-actions">
-                                                        <a href="../<?php echo $backup['file_path']; ?>" class="btn btn-sm btn-light" download>
+                                                        <?php if (!empty($backup['file_path'])): ?>
+                                                        <a href="../<?php echo htmlspecialchars($backup['file_path']); ?>" class="btn btn-sm btn-light" download>
                                                             <i class="fas fa-download"></i>
                                                         </a>
+                                                        <?php endif; ?>
                                                     </div>
                                                 </div>
                                                 <?php endwhile; ?>
@@ -1000,14 +1016,14 @@ include '../includes/admin_header.php';
                                             </tr>
                                             <tr>
                                                 <td>Database Name:</td>
-                                                <td><?php echo DB_NAME; ?></td>
+                                                <td><?php echo defined('DB_NAME') ? DB_NAME : 'jenny_cosmetics_db'; ?></td>
                                             </tr>
                                             <tr>
                                                 <td>Database Size:</td>
                                                 <td><?php 
                                                     $size_query = "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) as size_mb FROM information_schema.TABLES WHERE table_schema = DATABASE()";
                                                     $size_result = mysqli_query($connection, $size_query);
-                                                    $db_size = mysqli_fetch_assoc($size_result)['size_mb'];
+                                                    $db_size = $size_result ? (mysqli_fetch_assoc($size_result)['size_mb'] ?? '0') : '0';
                                                     echo $db_size . ' MB';
                                                 ?></td>
                                             </tr>
@@ -1016,7 +1032,7 @@ include '../includes/admin_header.php';
                                                 <td><?php 
                                                     $tables_query = "SELECT COUNT(*) as count FROM information_schema.TABLES WHERE table_schema = DATABASE()";
                                                     $tables_result = mysqli_query($connection, $tables_query);
-                                                    $table_count = mysqli_fetch_assoc($tables_result)['count'];
+                                                    $table_count = $tables_result ? (mysqli_fetch_assoc($tables_result)['count'] ?? '0') : '0';
                                                     echo $table_count;
                                                 ?></td>
                                             </tr>
@@ -1049,7 +1065,7 @@ include '../includes/admin_header.php';
                                                 <td><?php 
                                                     if (function_exists('exec')) {
                                                         @exec('uptime', $uptime_output);
-                                                        echo $uptime_output[0] ?? 'N/A';
+                                                        echo isset($uptime_output[0]) ? substr($uptime_output[0], 0, 100) : 'N/A';
                                                     } else {
                                                         echo 'N/A';
                                                     }
@@ -1087,20 +1103,25 @@ include '../includes/admin_header.php';
 
 <!-- Page-specific scripts -->
 <script>
-// Toggle password visibility
-function togglePassword(inputId) {
+// Toggle password visibility - FIXED: added button parameter
+function togglePassword(inputId, button) {
     const input = document.getElementById(inputId);
-    const toggleBtn = event.currentTarget;
-    const icon = toggleBtn.querySelector('i');
+    if (!input) return;
+    
+    const icon = button.querySelector('i');
     
     if (input.type === 'password') {
         input.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
+        if (icon) {
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
     } else {
         input.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
+        if (icon) {
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
     }
 }
 
@@ -1112,398 +1133,54 @@ function checkForUpdates() {
 // Confirm before leaving if unsaved changes
 let formChanged = false;
 
-document.querySelectorAll('.settings-form input, .settings-form select, .settings-form textarea').forEach(input => {
-    input.addEventListener('change', () => {
-        formChanged = true;
+// Safe event listener addition
+document.addEventListener('DOMContentLoaded', function() {
+    // Add change listeners to form inputs
+    const formInputs = document.querySelectorAll('.settings-form input, .settings-form select, .settings-form textarea');
+    formInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            formChanged = true;
+        });
+    });
+
+    // Save tab state in localStorage
+    const activeTab = localStorage.getItem('activeSettingsTab');
+    if (activeTab) {
+        const tab = document.querySelector(`button[data-bs-target="${activeTab}"]`);
+        if (tab) {
+            try {
+                const tabInstance = new bootstrap.Tab(tab);
+                tabInstance.show();
+            } catch (e) {
+                console.log('Tab error:', e);
+            }
+        }
+    }
+    
+    // Tab change event listeners
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            if (e.target && e.target.getAttribute) {
+                localStorage.setItem('activeSettingsTab', e.target.getAttribute('data-bs-target'));
+                formChanged = false; // Reset change tracking when switching tabs
+            }
+        });
+    });
+    
+    // Toggle payment method sections - just for console logging
+    document.querySelectorAll('input[name="payment_methods[]"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            // Optional: Add logic to show/hide specific payment settings
+            console.log('Payment method toggled:', this.value);
+        });
     });
 });
 
+// Before unload warning
 window.addEventListener('beforeunload', function(e) {
     if (formChanged) {
         e.preventDefault();
         e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
     }
 });
-
-// Save tab state in localStorage
-document.addEventListener('DOMContentLoaded', function() {
-    const activeTab = localStorage.getItem('activeSettingsTab');
-    if (activeTab) {
-        const tab = document.querySelector(`button[data-bs-target="${activeTab}"]`);
-        if (tab) {
-            const tabInstance = new bootstrap.Tab(tab);
-            tabInstance.show();
-        }
-    }
-    
-    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function(e) {
-            localStorage.setItem('activeSettingsTab', e.target.getAttribute('data-bs-target'));
-            formChanged = false; // Reset change tracking when switching tabs
-        });
-    });
-});
-
-// Toggle payment method sections
-document.querySelectorAll('input[name="payment_methods[]"]').forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-        // Could add logic to show/hide specific payment settings
-        console.log('Payment method toggled:', this.value);
-    });
-});
 </script>
-
-<style>
-/* ===== SETTINGS PAGE SPECIFIC STYLES ===== */
-
-/* Settings Card */
-.settings-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-}
-
-.settings-header {
-    background: var(--light);
-    border-bottom: 1px solid var(--border);
-}
-
-/* Settings Tabs */
-.settings-tabs {
-    padding: 0.5rem 1rem 0;
-    border-bottom: none;
-}
-
-.settings-tabs .nav-link {
-    border: none;
-    color: var(--dark-gray);
-    font-weight: 500;
-    padding: 0.75rem 1.25rem;
-    margin-right: 0.5rem;
-    border-radius: 8px 8px 0 0;
-    transition: var(--transition);
-}
-
-.settings-tabs .nav-link:hover {
-    color: var(--primary);
-    background: white;
-}
-
-.settings-tabs .nav-link.active {
-    color: var(--primary);
-    background: white;
-    font-weight: 600;
-    border-bottom: 2px solid var(--primary);
-}
-
-/* Settings Body */
-.settings-body {
-    padding: 2rem;
-}
-
-/* Section Title */
-.section-title {
-    color: var(--primary);
-    font-weight: 600;
-    margin: 1.5rem 0 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.section-title:first-of-type {
-    margin-top: 0;
-}
-
-/* Form Elements */
-.settings-form .form-label {
-    font-weight: 500;
-    color: var(--dark);
-    margin-bottom: 0.5rem;
-}
-
-.settings-form .form-control,
-.settings-form .form-select {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.6rem 1rem;
-    transition: var(--transition);
-}
-
-.settings-form .form-control:focus,
-.settings-form .form-select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(30,58,95,0.1);
-    outline: none;
-}
-
-.settings-form .form-control:disabled,
-.settings-form .form-control[readonly] {
-    background: var(--light);
-    cursor: not-allowed;
-}
-
-/* Password Input Group */
-.password-input-group {
-    position: relative;
-}
-
-.password-input-group .form-control {
-    padding-right: 45px;
-}
-
-.password-toggle {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: transparent;
-    border: none;
-    color: var(--dark-gray);
-    cursor: pointer;
-    padding: 5px;
-}
-
-.password-toggle:hover {
-    color: var(--primary);
-}
-
-/* Payment Methods Grid */
-.payment-methods-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-top: 0.5rem;
-}
-
-.payment-method-item {
-    position: relative;
-}
-
-.payment-method-item input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.payment-method-item label {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1.5rem;
-    background: var(--light);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: var(--transition);
-    text-align: center;
-}
-
-.payment-method-item label i {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    color: var(--primary);
-}
-
-.payment-method-item label span {
-    font-weight: 500;
-    color: var(--dark);
-}
-
-.payment-method-item input[type="checkbox"]:checked + label {
-    border-color: var(--primary);
-    background: rgba(30,58,95,0.05);
-    box-shadow: 0 0 0 3px rgba(30,58,95,0.1);
-}
-
-.payment-method-item input[type="checkbox"]:checked + label i {
-    color: var(--primary);
-}
-
-/* Role Badge */
-.role-badge.super-admin {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    background: var(--warning);
-    color: #856404;
-    border-radius: 30px;
-    font-weight: 600;
-    font-size: 0.85rem;
-}
-
-/* Backup List */
-.backup-list {
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-}
-
-.backup-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    border-bottom: 1px solid var(--border);
-    transition: var(--transition);
-}
-
-.backup-item:last-child {
-    border-bottom: none;
-}
-
-.backup-item:hover {
-    background: var(--light);
-}
-
-.backup-info {
-    flex: 1;
-}
-
-.backup-name {
-    font-weight: 600;
-    color: var(--dark);
-    margin-bottom: 0.25rem;
-}
-
-.backup-meta {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.8rem;
-    color: var(--dark-gray);
-}
-
-.backup-meta span {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-}
-
-.backup-meta i {
-    color: var(--primary);
-}
-
-.backup-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-/* System Info Card */
-.system-info-card {
-    background: var(--light);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    height: 100%;
-}
-
-.system-info-table {
-    width: 100%;
-}
-
-.system-info-table tr td {
-    padding: 0.5rem 0;
-    border-bottom: 1px dashed var(--border);
-}
-
-.system-info-table tr:last-child td {
-    border-bottom: none;
-}
-
-.system-info-table td:first-child {
-    color: var(--dark-gray);
-    width: 40%;
-}
-
-.system-info-table td:last-child {
-    font-weight: 500;
-    color: var(--dark);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .settings-body {
-        padding: 1.5rem;
-    }
-    
-    .settings-tabs .nav-link {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.85rem;
-    }
-    
-    .payment-methods-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .backup-meta {
-        flex-direction: column;
-        gap: 0.3rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .settings-body {
-        padding: 1rem;
-    }
-    
-    .settings-tabs .nav-link {
-        padding: 0.4rem 0.5rem;
-        font-size: 0.75rem;
-    }
-    
-    .payment-methods-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .backup-item {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .backup-actions {
-        margin-top: 0.5rem;
-        width: 100%;
-        justify-content: flex-end;
-    }
-    
-    .system-info-table td {
-        display: block;
-        width: 100%;
-        padding: 0.25rem 0;
-    }
-    
-    .system-info-table td:first-child {
-        width: 100%;
-    }
-}
-
-/* Print Styles */
-@media print {
-    .settings-tabs,
-    .btn,
-    .password-toggle,
-    .backup-actions,
-    .back-to-top {
-        display: none !important;
-    }
-    
-    .settings-card {
-        border: 1px solid #000;
-        box-shadow: none;
-    }
-    
-    .settings-body {
-        padding: 1rem;
-    }
-    
-    .tab-pane {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
-}
-</style>

@@ -5,7 +5,7 @@
         </main> <!-- End main-content -->
     </div> <!-- End admin-wrapper -->
 
-    <!-- Footer -->
+    <!-- Footer - NOW OUTSIDE admin-wrapper, properly positioned -->
     <footer class="admin-footer">
         <div class="container-fluid px-3 px-md-4">
             <div class="row align-items-center gy-3 gy-md-0">
@@ -28,6 +28,7 @@
         </div>
     </footer>
 
+    <!-- Modals and Scripts -->
     <!-- About Modal -->
     <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -384,21 +385,41 @@
             --border: #dee2e6;
         }
 
-        /* Footer Styles */
+        /* Footer Styles - Now outside admin-wrapper */
         .admin-footer {
             background: linear-gradient(to right, var(--light), white);
-            padding: 1.5rem 0;
-            border-top: 1px solid var(--border);
-            font-size: 0.95rem;
+            padding: 1rem 0;
+            border-top: 2px solid var(--border);
+            font-size: 0.9rem;
             color: var(--dark);
             box-shadow: 0 -4px 6px rgba(0,0,0,0.02);
             width: 100%;
+            flex-shrink: 0;
+            margin-top: auto;
+            position: relative;
+            z-index: 100;
             clear: both;
+        }
+
+        /* Adjust for sidebar on desktop */
+        @media (min-width: 769px) {
+            .admin-footer {
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
+            }
+        }
+
+        /* Mobile footer */
+        @media (max-width: 768px) {
+            .admin-footer {
+                margin-left: 0;
+                width: 100%;
+            }
         }
 
         .footer-copyright {
             color: var(--dark-gray);
-            line-height: 1.6;
+            line-height: 1.5;
         }
 
         .footer-copyright strong {
@@ -411,15 +432,15 @@
             flex-wrap: wrap;
             align-items: center;
             justify-content: flex-end;
-            gap: 0.75rem 1rem;
+            gap: 0.5rem 1rem;
         }
 
         .version-badge {
             background: var(--light);
             border: 1px solid var(--border);
-            padding: 0.25rem 0.75rem;
+            padding: 0.2rem 0.6rem;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--dark-gray);
         }
 
@@ -434,7 +455,7 @@
             transition: color 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 0.3rem;
         }
 
         .footer-link:hover {
@@ -443,7 +464,7 @@
         }
 
         .footer-link i {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         /* Modal Styles */
@@ -459,21 +480,6 @@
             padding: 1.25rem 1.5rem;
         }
 
-        .modal-header .modal-title {
-            color: var(--dark);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-        }
-
-        .modal-header .btn-close {
-            transition: transform 0.2s;
-        }
-
-        .modal-header .btn-close:hover {
-            transform: rotate(90deg);
-        }
-
         .modal-body {
             padding: 2rem;
         }
@@ -482,7 +488,6 @@
             background: var(--light);
             border-top: 1px solid var(--border);
             padding: 1.25rem 1.5rem;
-            gap: 0.5rem;
         }
 
         /* About Modal Specific */
@@ -537,7 +542,6 @@
             color: var(--dark);
             font-weight: 600;
             margin-bottom: 1rem;
-            letter-spacing: 0.3px;
         }
 
         .system-info-list {
@@ -552,10 +556,6 @@
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-        }
-
-        .system-info-list li:last-child {
-            border-bottom: none;
         }
 
         .system-info-list li i {
@@ -607,16 +607,6 @@
             box-shadow: 0 4px 8px rgba(220,53,69,0.3);
         }
 
-        .btn-secondary {
-            background: var(--dark-gray);
-            border: none;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
         /* Loading Spinner */
         .loading-spinner {
             display: none;
@@ -664,10 +654,6 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         }
 
-        .back-to-top i {
-            font-size: 1.2rem;
-        }
-
         /* Toast Container */
         #toastContainer {
             z-index: 1100;
@@ -689,13 +675,12 @@
         /* Responsive Footer */
         @media (max-width: 768px) {
             .admin-footer {
-                padding: 1rem 0;
-                text-align: center;
+                padding: 0.75rem 0;
             }
 
             .footer-links {
                 justify-content: center;
-                margin-top: 0.5rem;
+                margin-top: 0.25rem;
             }
 
             .modal-dialog {
@@ -714,24 +699,23 @@
             .toast {
                 min-width: 300px;
             }
-        }
-
-        @media (max-width: 576px) {
-            .footer-links {
-                flex-wrap: wrap;
-                gap: 0.5rem;
-                flex-direction: column;
-            }
-
-            .separator {
-                display: none;
-            }
-
+            
             .back-to-top {
                 bottom: 20px;
                 right: 20px;
                 width: 40px;
                 height: 40px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .footer-links {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .separator {
+                display: none;
             }
 
             .modal-body {

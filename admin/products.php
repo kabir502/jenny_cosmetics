@@ -14,13 +14,31 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 require_once '../config/database.php';
 require_once '../config/constants.php';
 
+// Initialize variables
+$message = '';
+$message_type = '';
+
 // Pagination variables
 $limit = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
-// Get total products count
-$count_query = "SELECT COUNT(*) as total FROM products WHERE is_active = 1";
+// Status filter
+$status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
+
+// Build query conditions based on filter
+$where_conditions = [];
+if ($status_filter === 'active') {
+    $where_conditions[] = "p.is_active = 1";
+} elseif ($status_filter === 'inactive') {
+    $where_conditions[] = "p.is_active = 0";
+}
+// If 'all', no condition added
+
+$where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
+
+// Get total products count based on filter
+$count_query = "SELECT COUNT(*) as total FROM products p $where_clause";
 $count_result = mysqli_query($connection, $count_query);
 $total_rows = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_rows / $limit);
@@ -29,10 +47,24 @@ $total_pages = ceil($total_rows / $limit);
 $query = "SELECT p.*, c.category_name 
           FROM products p 
           LEFT JOIN categories c ON p.category_id = c.category_id 
-          WHERE p.is_active = 1 
-          ORDER BY p.created_at DESC 
+          $where_clause
+          ORDER BY 
+            CASE 
+                WHEN p.is_active = 0 THEN 1 
+                ELSE 2 
+            END,
+            p.created_at DESC 
           LIMIT $limit OFFSET $offset";
 $result = mysqli_query($connection, $query);
+
+// Get counts for stats - MATCHING YOUR EXISTING SMALL CARDS STYLE
+$stats_query = "SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactive
+                FROM products";
+$stats_result = mysqli_query($connection, $stats_query);
+$stats = mysqli_fetch_assoc($stats_result);
 
 // Include admin header
 include '../includes/admin_header.php';
@@ -63,6 +95,73 @@ include '../includes/admin_header.php';
                         </a>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Summary Cards - MATCHING YOUR EXISTING SMALL CARD STYLE -->
+    <div class="row mb-4">
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="status-card all">
+                <div class="d-flex align-items-center">
+                    <div class="status-icon">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="status-details ms-2">
+                        <span class="status-label">Total Products</span>
+                        <span class="status-count"><?php echo $stats['total']; ?></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="status-card active">
+                <div class="d-flex align-items-center">
+                    <div class="status-icon" style="background: rgba(25,135,84,0.1); color: var(--success);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="status-details ms-2">
+                        <span class="status-label">Active</span>
+                        <span class="status-count"><?php echo $stats['active']; ?></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="status-card inactive">
+                <div class="d-flex align-items-center">
+                    <div class="status-icon" style="background: rgba(220,53,69,0.1); color: var(--danger);">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="status-details ms-2">
+                        <span class="status-label">Inactive</span>
+                        <span class="status-count"><?php echo $stats['inactive']; ?></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs - SMALLER LIKE YOUR EXISTING DESIGN -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filter-tabs">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo $status_filter == 'all' ? 'active' : ''; ?>" 
+                           href="?status=all">All (<?php echo $stats['total']; ?>)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo $status_filter == 'active' ? 'active' : ''; ?>" 
+                           href="?status=active">Active (<?php echo $stats['active']; ?>)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo $status_filter == 'inactive' ? 'active' : ''; ?>" 
+                           href="?status=inactive">Inactive (<?php echo $stats['inactive']; ?>)</a>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
@@ -124,7 +223,7 @@ include '../includes/admin_header.php';
                         <tbody>
                             <?php if (mysqli_num_rows($result) > 0): ?>
                                 <?php while ($product = mysqli_fetch_assoc($result)): ?>
-                                <tr>
+                                <tr class="<?php echo $product['is_active'] ? '' : 'table-inactive'; ?>">
                                     <td>
                                         <span class="product-id">#<?php echo $product['product_id']; ?></span>
                                     </td>
@@ -170,6 +269,12 @@ include '../includes/admin_header.php';
                                                class="btn-action edit" title="Edit Product">
                                                 <i class="fas fa-edit"></i>
                                             </a>
+                                            <a href="toggle_product.php?id=<?php echo $product['product_id']; ?>&status=<?php echo $product['is_active'] ? '0' : '1'; ?>" 
+                                               class="btn-action <?php echo $product['is_active'] ? 'warning' : 'success'; ?>" 
+                                               title="<?php echo $product['is_active'] ? 'Deactivate' : 'Activate'; ?>"
+                                               onclick="return confirm('<?php echo $product['is_active'] ? 'Deactivate' : 'Activate'; ?> this product?')">
+                                                <i class="fas fa-<?php echo $product['is_active'] ? 'ban' : 'check'; ?>"></i>
+                                            </a>
                                             <a href="delete_product.php?id=<?php echo $product['product_id']; ?>" 
                                                class="btn-action delete" title="Delete Product" 
                                                onclick="return confirm('Are you sure you want to delete this product?')">
@@ -198,19 +303,19 @@ include '../includes/admin_header.php';
                     <nav aria-label="Products pagination">
                         <ul class="pagination justify-content-center mb-0">
                             <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
-                                <a class="page-link" href="?page=<?php echo $page - 1; ?>">
+                                <a class="page-link" href="?page=<?php echo $page - 1; ?>&status=<?php echo $status_filter; ?>">
                                     <i class="fas fa-chevron-left"></i>
                                 </a>
                             </li>
                             
                             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                                 <li class="page-item <?php echo $i == $page ? 'active' : ''; ?>">
-                                    <a class="page-link" href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                                    <a class="page-link" href="?page=<?php echo $i; ?>&status=<?php echo $status_filter; ?>"><?php echo $i; ?></a>
                                 </li>
                             <?php endfor; ?>
                             
                             <li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
-                                <a class="page-link" href="?page=<?php echo $page + 1; ?>">
+                                <a class="page-link" href="?page=<?php echo $page + 1; ?>&status=<?php echo $status_filter; ?>">
                                     <i class="fas fa-chevron-right"></i>
                                 </a>
                             </li>
@@ -248,7 +353,122 @@ document.getElementById('productSearch')?.addEventListener('keyup', function() {
 </script>
 
 <style>
-/* Products Table Specific Styles */
+/* ===== PRODUCTS PAGE SPECIFIC STYLES ===== */
+
+/* Status Cards - MATCHING YOUR EXISTING SMALL CARD STYLE */
+.status-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 0.75rem;
+    transition: var(--transition);
+    height: 100%;
+    box-shadow: var(--shadow-sm);
+}
+
+.status-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.status-card.all {
+    border-left: 4px solid var(--primary);
+}
+
+.status-card.active {
+    border-left: 4px solid var(--success);
+}
+
+.status-card.inactive {
+    border-left: 4px solid var(--danger);
+}
+
+.status-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    background: var(--light);
+}
+
+.status-card.all .status-icon {
+    background: rgba(30,58,95,0.1);
+    color: var(--primary);
+}
+
+.status-details {
+    flex: 1;
+}
+
+.status-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--dark-gray);
+    margin-bottom: 0.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.status-count {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--dark);
+    line-height: 1.2;
+}
+
+/* Filter Tabs - SMALLER LIKE YOUR EXISTING DESIGN */
+.filter-tabs {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.nav-pills {
+    gap: 0.5rem;
+}
+
+.nav-pills .nav-link {
+    color: var(--dark);
+    border-radius: 20px;
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.nav-pills .nav-link:hover {
+    background: var(--light);
+    color: var(--primary);
+}
+
+.nav-pills .nav-link.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Table row for inactive products */
+.table-inactive {
+    background-color: rgba(0,0,0,0.02);
+    opacity: 0.9;
+}
+
+.table-inactive:hover {
+    background-color: rgba(0,0,0,0.04) !important;
+}
+
+.table-inactive .product-name,
+.table-inactive .product-sku,
+.table-inactive .product-price {
+    opacity: 0.8;
+}
+
+/* Products Table */
 .products-table {
     margin: 0;
 }
@@ -275,6 +495,7 @@ document.getElementById('productSearch')?.addEventListener('keyup', function() {
     background: var(--light);
 }
 
+/* Product elements - keep your existing styles */
 .product-id {
     font-weight: 600;
     color: var(--primary);
@@ -351,71 +572,32 @@ document.getElementById('productSearch')?.addEventListener('keyup', function() {
     color: #842029;
 }
 
-/* Page Header */
-.page-header-box {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-}
-
-.page-title {
-    font-size: 1.8rem;
-    font-weight: 600;
-    color: var(--dark);
-    margin-bottom: 0.5rem;
-}
-
-.breadcrumb {
-    margin-bottom: 0;
-    background: transparent;
-    padding: 0;
-}
-
-.breadcrumb-item a {
-    color: var(--primary);
-    text-decoration: none;
-}
-
-.breadcrumb-item.active {
-    color: var(--dark-gray);
-}
-
-/* Table Card */
-.table-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-}
-
-.table-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
+/* Status Badge */
+.status-badge {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
 }
 
-.table-title h5 {
-    margin: 0;
-    color: var(--dark);
-    font-weight: 600;
+.status-active {
+    background: #d1e7dd;
+    color: #0a3622;
 }
 
-.records-count {
-    font-size: 0.85rem;
-    color: var(--dark-gray);
-    margin-left: 1rem;
+.status-inactive {
+    background: #f8d7da;
+    color: #842029;
 }
 
-.table-actions {
-    display: flex;
-    gap: 0.5rem;
+.status-active i {
+    color: var(--success);
+}
+
+.status-inactive i {
+    color: var(--danger);
 }
 
 /* Action Buttons */
@@ -449,22 +631,64 @@ document.getElementById('productSearch')?.addEventListener('keyup', function() {
     border-color: var(--warning);
 }
 
+.btn-action.success:hover {
+    color: var(--success);
+    border-color: var(--success);
+}
+
+.btn-action.warning:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
 .btn-action.delete:hover {
     color: var(--danger);
     border-color: var(--danger);
 }
 
+/* Table Header */
+.table-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.table-title h5 {
+    margin: 0;
+    color: var(--dark);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.records-count {
+    font-size: 0.8rem;
+    color: var(--dark-gray);
+    margin-left: 0.5rem;
+}
+
+/* Table Footer */
+.table-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--light);
+}
+
 /* Pagination */
 .pagination {
-    margin: 0;
+    gap: 0.25rem;
 }
 
 .page-link {
     border: 1px solid var(--border);
     color: var(--dark);
-    padding: 0.5rem 1rem;
-    margin: 0 0.2rem;
-    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: var(--transition);
+    font-size: 0.85rem;
 }
 
 .page-link:hover {
@@ -479,15 +703,84 @@ document.getElementById('productSearch')?.addEventListener('keyup', function() {
     color: white;
 }
 
-.page-item.disabled .page-link {
-    color: var(--dark-gray);
-    pointer-events: none;
-    background: var(--light);
+/* Page Header */
+.page-header-box {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
 }
 
-.table-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border);
-    background: var(--light);
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+}
+
+.breadcrumb {
+    margin-bottom: 0;
+    background: transparent;
+    padding: 0;
+}
+
+.breadcrumb-item a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.breadcrumb-item.active {
+    color: var(--dark-gray);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .status-card {
+        padding: 0.75rem;
+    }
+    
+    .status-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1.1rem;
+    }
+    
+    .status-count {
+        font-size: 1.1rem;
+    }
+    
+    .nav-pills .nav-link {
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
+    }
+    
+    .product-image-sm {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .action-buttons {
+        gap: 0.3rem;
+    }
+    
+    .btn-action {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+@media (max-width: 576px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .table-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .table-actions input {
+        width: 100% !important;
+    }
 }
 </style>

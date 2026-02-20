@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     setcookie('remember_token', $token, $expiry, '/', '', true, true);
                 }
                 
-                $update_query = "UPDATE users SET last_login = NOW(), last_ip = ? WHERE user_id = ?";
+                $update_query = "UPDATE users SET last_login = NOW(), last_login = ? WHERE user_id = ?";
                 $update_stmt = mysqli_prepare($connection, $update_query);
                 $ip_address = $_SERVER['REMOTE_ADDR'];
                 mysqli_stmt_bind_param($update_stmt, "si", $ip_address, $user['user_id']);

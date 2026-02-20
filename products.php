@@ -1,5 +1,5 @@
 <?php
-// products.php - Products listing page
+// products.php - Products listing page (Featured products excluded - only shown on home page)
 
 // Include session handler
 require_once 'session_handler.php';
@@ -29,9 +29,8 @@ if ($categories_result) {
     }
 }
 
-// Build search query
-$where_conditions = ["p.is_active = 1"];
-$params = [];
+// Build search query - EXCLUDE FEATURED PRODUCTS
+$where_conditions = ["p.is_active = 1", "p.is_featured = 0"]; // Added is_featured = 0 to exclude featured products
 
 if (!empty($search)) {
     $search_term = mysqli_real_escape_string($connection, $search);
@@ -55,7 +54,7 @@ if ($category_id > 0) {
     }
 }
 
-// Get products count for pagination
+// Get products count for pagination (excluding featured)
 $count_query = "SELECT COUNT(*) as total 
                 FROM products p 
                 LEFT JOIN categories c ON p.category_id = c.category_id 
@@ -64,7 +63,7 @@ $count_result = mysqli_query($connection, $count_query);
 $total_products = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_products / $limit);
 
-// Get products
+// Get products (excluding featured)
 $products_query = "SELECT p.*, c.category_name 
                    FROM products p 
                    LEFT JOIN categories c ON p.category_id = c.category_id 
@@ -190,7 +189,7 @@ include 'includes/header.php';
                     <?php elseif ($category_id > 0): ?>
                         No products found in this category. <a href="products.php">Browse all categories</a>
                     <?php else: ?>
-                        No products available at the moment. Please check back later.
+                        No regular products available at the moment. <a href="index.php">Check out our featured items</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -225,12 +224,7 @@ include 'includes/header.php';
                         </span>
                         <?php endif; ?>
                         
-                        <!-- Featured Badge -->
-                        <?php if ($product['is_featured']): ?>
-                        <span class="position-absolute top-0 end-0 badge bg-success m-2">
-                            <i class="fas fa-star me-1"></i>Featured
-                        </span>
-                        <?php endif; ?>
+                        <!-- Note: Featured badge removed since featured products are excluded -->
                     </div>
                     
                     <div class="card-body">
@@ -289,17 +283,25 @@ include 'includes/header.php';
                                 <i class="fas fa-eye me-1"></i>View Details
                             </a>
                             
+                            <!-- Show Add to Cart for logged in users (all products here are non-featured) -->
                             <?php if ($product['quantity_in_stock'] > 0): ?>
-                            <form action="cart.php" method="GET" class="d-grid">
-                                <input type="hidden" name="action" value="add">
-                                <input type="hidden" name="id" value="<?php echo $product['product_id']; ?>">
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-cart-plus me-1"></i>Add to Cart
-                                </button>
-                            </form>
+                                <?php if (isset($_SESSION['user_id'])): ?>
+                                <form action="cart.php" method="GET" class="d-grid">
+                                    <input type="hidden" name="action" value="add">
+                                    <input type="hidden" name="id" value="<?php echo $product['product_id']; ?>">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-cart-plus me-1"></i>Add to Cart
+                                    </button>
+                                </form>
+                                <?php else: ?>
+                                <a href="login.php?redirect=<?php echo urlencode('product_detail.php?id=' . $product['product_id']); ?>" 
+                                   class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-sign-in-alt me-1"></i>Login to Buy
+                                </a>
+                                <?php endif; ?>
                             <?php else: ?>
                             <button class="btn btn-secondary btn-sm" disabled>
-                                <i class="fas fa-cart-plus me-1"></i>Out of Stock
+                                <i class="fas fa-times-circle me-1"></i>Out of Stock
                             </button>
                             <?php endif; ?>
                         </div>
@@ -366,7 +368,7 @@ include 'includes/header.php';
                             <div class="col-md-3 mb-3">
                                 <div class="p-3 bg-light rounded">
                                     <h3 class="text-primary"><?php echo $total_products; ?></h3>
-                                    <p class="mb-0">Total Products</p>
+                                    <p class="mb-0">Regular Products</p>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
@@ -378,8 +380,8 @@ include 'includes/header.php';
                             <div class="col-md-3 mb-3">
                                 <div class="p-3 bg-light rounded">
                                     <?php
-                                    // Count products in stock
-                                    $in_stock_query = "SELECT COUNT(*) as in_stock FROM products WHERE quantity_in_stock > 0";
+                                    // Count products in stock (excluding featured)
+                                    $in_stock_query = "SELECT COUNT(*) as in_stock FROM products WHERE quantity_in_stock > 0 AND is_active = 1 AND is_featured = 0";
                                     $in_stock_result = mysqli_query($connection, $in_stock_query);
                                     $in_stock = mysqli_fetch_assoc($in_stock_result)['in_stock'];
                                     ?>
@@ -389,14 +391,10 @@ include 'includes/header.php';
                             </div>
                             <div class="col-md-3 mb-3">
                                 <div class="p-3 bg-light rounded">
-                                    <?php
-                                    // Count featured products
-                                    $featured_query = "SELECT COUNT(*) as featured FROM products WHERE is_featured = 1";
-                                    $featured_result = mysqli_query($connection, $featured_query);
-                                    $featured = mysqli_fetch_assoc($featured_result)['featured'];
-                                    ?>
-                                    <h3 class="text-warning"><?php echo $featured; ?></h3>
-                                    <p class="mb-0">Featured</p>
+                                    <a href="index.php#featured" class="text-decoration-none">
+                                        <h3 class="text-warning">View Featured</h3>
+                                        <p class="mb-0">on Home Page</p>
+                                    </a>
                                 </div>
                             </div>
                         </div>

@@ -72,10 +72,10 @@ $prev = mysqli_fetch_assoc($prev_result);
 
 // Calculate growth percentages
 $growth = [
-    'orders' => $prev['orders'] > 0 ? round((($current['orders'] - $prev['orders']) / $prev['orders']) * 100, 1) : 0,
-    'revenue' => $prev['revenue'] > 0 ? round((($current['revenue'] - $prev['revenue']) / $prev['revenue']) * 100, 1) : 0,
-    'avg_order' => $prev['avg_order_value'] > 0 ? round((($current['avg_order_value'] - $prev['avg_order_value']) / $prev['avg_order_value']) * 100, 1) : 0,
-    'customers' => $prev['customers'] > 0 ? round((($current['customers'] - $prev['customers']) / $prev['customers']) * 100, 1) : 0
+    'orders' => isset($prev['orders']) && $prev['orders'] > 0 ? round((($current['orders'] - $prev['orders']) / $prev['orders']) * 100, 1) : 0,
+    'revenue' => isset($prev['revenue']) && $prev['revenue'] > 0 ? round((($current['revenue'] - $prev['revenue']) / $prev['revenue']) * 100, 1) : 0,
+    'avg_order' => isset($prev['avg_order_value']) && $prev['avg_order_value'] > 0 ? round((($current['avg_order_value'] - $prev['avg_order_value']) / $prev['avg_order_value']) * 100, 1) : 0,
+    'customers' => isset($prev['customers']) && $prev['customers'] > 0 ? round((($current['customers'] - $prev['customers']) / $prev['customers']) * 100, 1) : 0
 ];
 
 // =============================================================================
@@ -189,6 +189,8 @@ $price_ranges = [
 ];
 
 $price_range_data = [];
+$total_revenue = $current['revenue'] ?? 0;
+
 foreach ($price_ranges as $range_name => $range) {
     $query = "SELECT 
                     COUNT(DISTINCT oi.order_item_id) as sales_count,
@@ -277,7 +279,7 @@ $payment_breakdown_query = "SELECT
                                 COUNT(*) as transaction_count,
                                 COALESCE(SUM(o.total_amount), 0) as total_amount,
                                 COALESCE(AVG(o.total_amount), 0) as avg_amount,
-                                (COALESCE(SUM(o.total_amount), 0) / {$current['revenue']}) * 100 as percentage
+                                " . ($total_revenue > 0 ? "(COALESCE(SUM(o.total_amount), 0) / $total_revenue) * 100" : "0") . " as percentage
                             FROM orders o
                             WHERE DATE(o.order_date) BETWEEN '$start_date' AND '$end_date'
                             AND o.status IN ('Delivered', 'Shipped')
@@ -304,7 +306,7 @@ $shipping_analysis_result = mysqli_query($connection, $shipping_analysis_query);
 $tax_query = "SELECT 
                 COALESCE(SUM(o.tax_amount), 0) as total_tax,
                 COALESCE(AVG(o.tax_amount), 0) as avg_tax,
-                (COALESCE(SUM(o.tax_amount), 0) / {$current['revenue']}) * 100 as tax_percentage
+                " . ($total_revenue > 0 ? "(COALESCE(SUM(o.tax_amount), 0) / $total_revenue) * 100" : "0") . " as tax_percentage
             FROM orders o
             WHERE DATE(o.order_date) BETWEEN '$start_date' AND '$end_date'
             AND o.status IN ('Delivered', 'Shipped')";
@@ -327,7 +329,7 @@ $conversion_query = "SELECT
 
 $conversion_result = mysqli_query($connection, $conversion_query);
 $conversion_data = mysqli_fetch_assoc($conversion_result);
-$conversion_rate = $conversion_data['total_customers'] > 0 
+$conversion_rate = isset($conversion_data['total_customers']) && $conversion_data['total_customers'] > 0 
     ? round(($conversion_data['buying_customers'] / $conversion_data['total_customers']) * 100, 2) 
     : 0;
 
@@ -347,7 +349,7 @@ $repeat_query = "SELECT
 
 $repeat_result = mysqli_query($connection, $repeat_query);
 $repeat_data = mysqli_fetch_assoc($repeat_result);
-$repeat_rate = $repeat_data['customers_with_orders'] > 0 
+$repeat_rate = isset($repeat_data['customers_with_orders']) && $repeat_data['customers_with_orders'] > 0 
     ? round(($repeat_data['repeat_customers'] / $repeat_data['customers_with_orders']) * 100, 2) 
     : 0;
 
@@ -399,31 +401,30 @@ $daily_labels = [];
 $daily_orders = [];
 $daily_revenue = [];
 
-if ($daily_trend_result) {
+if ($daily_trend_result && mysqli_num_rows($daily_trend_result) > 0) {
     while ($row = mysqli_fetch_assoc($daily_trend_result)) {
         $daily_labels[] = date('M d', strtotime($row['date']));
-        $daily_orders[] = $row['orders'];
-        $daily_revenue[] = $row['revenue'];
+        $daily_orders[] = (int)$row['orders'];
+        $daily_revenue[] = (float)$row['revenue'];
     }
 }
 
 // Hourly distribution data
 $hourly_labels = [];
-$hourly_orders = [];
-$hourly_revenue = [];
+$hourly_orders = array_fill(0, 24, 0);
+$hourly_revenue = array_fill(0, 24, 0);
 
 for ($h = 0; $h < 24; $h++) {
     $hourly_labels[] = sprintf('%02d:00', $h);
-    $hourly_orders[$h] = 0;
-    $hourly_revenue[$h] = 0;
 }
 
-if ($hourly_distribution_result) {
-    mysqli_data_seek($hourly_distribution_result, 0);
+if ($hourly_distribution_result && mysqli_num_rows($hourly_distribution_result) > 0) {
     while ($row = mysqli_fetch_assoc($hourly_distribution_result)) {
         $hour = (int)$row['hour'];
-        $hourly_orders[$hour] = (int)$row['order_count'];
-        $hourly_revenue[$hour] = (float)$row['revenue'];
+        if ($hour >= 0 && $hour < 24) {
+            $hourly_orders[$hour] = (int)$row['order_count'];
+            $hourly_revenue[$hour] = (float)$row['revenue'];
+        }
     }
 }
 
@@ -431,16 +432,34 @@ if ($hourly_distribution_result) {
 $dow_labels = [];
 $dow_orders = [];
 $dow_revenue = [];
-$dow_order = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-if ($dow_result) {
-    mysqli_data_seek($dow_result, 0);
+if ($dow_result && mysqli_num_rows($dow_result) > 0) {
     while ($row = mysqli_fetch_assoc($dow_result)) {
         $dow_labels[] = substr($row['day_name'], 0, 3);
-        $dow_orders[] = $row['order_count'];
-        $dow_revenue[] = $row['revenue'];
+        $dow_orders[] = (int)$row['order_count'];
+        $dow_revenue[] = (float)$row['revenue'];
     }
 }
+
+// Monthly trend data
+$monthly_labels = [];
+$monthly_orders = [];
+$monthly_revenue = [];
+
+if ($monthly_trend_result && mysqli_num_rows($monthly_trend_result) > 0) {
+    while ($row = mysqli_fetch_assoc($monthly_trend_result)) {
+        $monthly_labels[] = $row['month_name'];
+        $monthly_orders[] = (int)$row['orders'];
+        $monthly_revenue[] = (float)$row['revenue'];
+    }
+}
+
+// Ensure all stats have default values
+$current['orders'] = $current['orders'] ?? 0;
+$current['revenue'] = $current['revenue'] ?? 0;
+$current['avg_order_value'] = $current['avg_order_value'] ?? 0;
+$current['customers'] = $current['customers'] ?? 0;
+$current['items_sold'] = $current['items_sold'] ?? 0;
 
 // Include admin header
 include '../includes/admin_header.php';
@@ -527,10 +546,10 @@ include '../includes/admin_header.php';
                 </div>
                 <div class="kpi-content">
                     <span class="kpi-label">Total Revenue</span>
-                    <span class="kpi-value">$<?php echo number_format($current['revenue'], 2); ?></span>
-                    <span class="kpi-trend <?php echo $growth['revenue'] >= 0 ? 'trend-up' : 'trend-down'; ?>">
-                        <i class="fas fa-<?php echo $growth['revenue'] >= 0 ? 'arrow-up' : 'arrow-down'; ?>"></i>
-                        <?php echo abs($growth['revenue']); ?>%
+                    <span class="kpi-value">$<?php echo number_format((float)$current['revenue'], 2); ?></span>
+                    <span class="kpi-trend <?php echo ($growth['revenue'] ?? 0) >= 0 ? 'trend-up' : 'trend-down'; ?>">
+                        <i class="fas fa-<?php echo ($growth['revenue'] ?? 0) >= 0 ? 'arrow-up' : 'arrow-down'; ?>"></i>
+                        <?php echo abs($growth['revenue'] ?? 0); ?>%
                     </span>
                 </div>
             </div>
@@ -543,10 +562,10 @@ include '../includes/admin_header.php';
                 </div>
                 <div class="kpi-content">
                     <span class="kpi-label">Total Orders</span>
-                    <span class="kpi-value"><?php echo number_format($current['orders']); ?></span>
-                    <span class="kpi-trend <?php echo $growth['orders'] >= 0 ? 'trend-up' : 'trend-down'; ?>">
-                        <i class="fas fa-<?php echo $growth['orders'] >= 0 ? 'arrow-up' : 'arrow-down'; ?>"></i>
-                        <?php echo abs($growth['orders']); ?>%
+                    <span class="kpi-value"><?php echo number_format((int)$current['orders']); ?></span>
+                    <span class="kpi-trend <?php echo ($growth['orders'] ?? 0) >= 0 ? 'trend-up' : 'trend-down'; ?>">
+                        <i class="fas fa-<?php echo ($growth['orders'] ?? 0) >= 0 ? 'arrow-up' : 'arrow-down'; ?>"></i>
+                        <?php echo abs($growth['orders'] ?? 0); ?>%
                     </span>
                 </div>
             </div>
@@ -559,10 +578,10 @@ include '../includes/admin_header.php';
                 </div>
                 <div class="kpi-content">
                     <span class="kpi-label">Customers</span>
-                    <span class="kpi-value"><?php echo number_format($current['customers']); ?></span>
-                    <span class="kpi-trend <?php echo $growth['customers'] >= 0 ? 'trend-up' : 'trend-down'; ?>">
-                        <i class="fas fa-<?php echo $growth['customers'] >= 0 ? 'arrow-up' : 'arrow-down'; ?>"></i>
-                        <?php echo abs($growth['customers']); ?>%
+                    <span class="kpi-value"><?php echo number_format((int)$current['customers']); ?></span>
+                    <span class="kpi-trend <?php echo ($growth['customers'] ?? 0) >= 0 ? 'trend-up' : 'trend-down'; ?>">
+                        <i class="fas fa-<?php echo ($growth['customers'] ?? 0) >= 0 ? 'arrow-up' : 'arrow-down'; ?>"></i>
+                        <?php echo abs($growth['customers'] ?? 0); ?>%
                     </span>
                 </div>
             </div>
@@ -575,10 +594,10 @@ include '../includes/admin_header.php';
                 </div>
                 <div class="kpi-content">
                     <span class="kpi-label">Avg Order Value</span>
-                    <span class="kpi-value">$<?php echo number_format($current['avg_order_value'], 2); ?></span>
-                    <span class="kpi-trend <?php echo $growth['avg_order'] >= 0 ? 'trend-up' : 'trend-down'; ?>">
-                        <i class="fas fa-<?php echo $growth['avg_order'] >= 0 ? 'arrow-up' : 'arrow-down'; ?>"></i>
-                        <?php echo abs($growth['avg_order']); ?>%
+                    <span class="kpi-value">$<?php echo number_format((float)$current['avg_order_value'], 2); ?></span>
+                    <span class="kpi-trend <?php echo ($growth['avg_order'] ?? 0) >= 0 ? 'trend-up' : 'trend-down'; ?>">
+                        <i class="fas fa-<?php echo ($growth['avg_order'] ?? 0) >= 0 ? 'arrow-up' : 'arrow-down'; ?>"></i>
+                        <?php echo abs($growth['avg_order'] ?? 0); ?>%
                     </span>
                 </div>
             </div>
@@ -661,16 +680,16 @@ include '../includes/admin_header.php';
                         <tbody>
                             <?php if ($clv_result && mysqli_num_rows($clv_result) > 0): ?>
                                 <?php while ($customer = mysqli_fetch_assoc($clv_result)): 
-                                    $ltv_per_day = $customer['customer_lifetime_days'] > 0 
-                                        ? $customer['total_spent'] / $customer['customer_lifetime_days'] 
-                                        : $customer['total_spent'];
+                                    $ltv_per_day = ($customer['customer_lifetime_days'] ?? 0) > 0 
+                                        ? ($customer['total_spent'] ?? 0) / $customer['customer_lifetime_days'] 
+                                        : ($customer['total_spent'] ?? 0);
                                 ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($customer['customer_name']); ?></td>
-                                    <td class="text-center"><?php echo $customer['order_count']; ?></td>
-                                    <td>$<?php echo number_format($customer['avg_order_value'], 2); ?></td>
-                                    <td>$<?php echo number_format($customer['total_spent'], 2); ?></td>
-                                    <td>$<?php echo number_format($ltv_per_day, 2); ?>/day</td>
+                                    <td><?php echo htmlspecialchars($customer['customer_name'] ?? 'N/A'); ?></td>
+                                    <td class="text-center"><?php echo (int)($customer['order_count'] ?? 0); ?></td>
+                                    <td>$<?php echo number_format((float)($customer['avg_order_value'] ?? 0), 2); ?></td>
+                                    <td>$<?php echo number_format((float)($customer['total_spent'] ?? 0), 2); ?></td>
+                                    <td>$<?php echo number_format((float)$ltv_per_day, 2); ?>/day</td>
                                 </tr>
                                 <?php endwhile; ?>
                             <?php else: ?>
@@ -702,15 +721,15 @@ include '../includes/admin_header.php';
                         <tbody>
                             <?php if ($acquisition_result && mysqli_num_rows($acquisition_result) > 0): ?>
                                 <?php while ($acq = mysqli_fetch_assoc($acquisition_result)): 
-                                    $avg_per_customer = $acq['new_customers'] > 0 
-                                        ? $acq['lifetime_value'] / $acq['new_customers'] 
+                                    $avg_per_customer = ($acq['new_customers'] ?? 0) > 0 
+                                        ? ($acq['lifetime_value'] ?? 0) / $acq['new_customers'] 
                                         : 0;
                                 ?>
                                 <tr>
-                                    <td><?php echo $acq['month_name']; ?></td>
-                                    <td class="text-center"><?php echo $acq['new_customers']; ?></td>
-                                    <td>$<?php echo number_format($acq['lifetime_value'], 2); ?></td>
-                                    <td>$<?php echo number_format($avg_per_customer, 2); ?></td>
+                                    <td><?php echo $acq['month_name'] ?? 'N/A'; ?></td>
+                                    <td class="text-center"><?php echo (int)($acq['new_customers'] ?? 0); ?></td>
+                                    <td>$<?php echo number_format((float)($acq['lifetime_value'] ?? 0), 2); ?></td>
+                                    <td>$<?php echo number_format((float)$avg_per_customer, 2); ?></td>
                                 </tr>
                                 <?php endwhile; ?>
                             <?php else: ?>
@@ -745,16 +764,16 @@ include '../includes/admin_header.php';
                         </thead>
                         <tbody>
                             <?php 
-                            $total_revenue = $current['revenue'];
+                            $total_revenue = (float)($current['revenue'] ?? 0);
                             if ($category_performance_result && mysqli_num_rows($category_performance_result) > 0): 
                                 while ($cat = mysqli_fetch_assoc($category_performance_result)):
-                                    $percentage = $total_revenue > 0 ? round(($cat['revenue'] / $total_revenue) * 100, 1) : 0;
+                                    $percentage = $total_revenue > 0 ? round(((float)($cat['revenue'] ?? 0) / $total_revenue) * 100, 1) : 0;
                             ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($cat['category_name']); ?></td>
-                                <td class="text-center"><?php echo $cat['products_in_category']; ?></td>
-                                <td class="text-center"><?php echo $cat['quantity_sold']; ?></td>
-                                <td>$<?php echo number_format($cat['revenue'], 2); ?></td>
+                                <td><?php echo htmlspecialchars($cat['category_name'] ?? 'N/A'); ?></td>
+                                <td class="text-center"><?php echo (int)($cat['products_in_category'] ?? 0); ?></td>
+                                <td class="text-center"><?php echo (int)($cat['quantity_sold'] ?? 0); ?></td>
+                                <td>$<?php echo number_format((float)($cat['revenue'] ?? 0), 2); ?></td>
                                 <td>
                                     <div class="percentage-bar">
                                         <span class="percentage-value"><?php echo $percentage; ?>%</span>
@@ -801,13 +820,14 @@ include '../includes/admin_header.php';
                                             <div class="product-sku"><?php echo $item['sku']; ?></div>
                                         </div>
                                     </td>
-                                    <td class="text-center"><?php echo $item['sold_in_period']; ?></td>
-                                    <td class="text-center"><?php echo $item['quantity_in_stock']; ?></td>
+                                    <td class="text-center"><?php echo (int)($item['sold_in_period'] ?? 0); ?></td>
+                                    <td class="text-center"><?php echo (int)($item['quantity_in_stock'] ?? 0); ?></td>
                                     <td class="text-center">
                                         <span class="turnover-badge rate-<?php 
-                                            echo $item['turnover_rate'] >= 2 ? 'high' : ($item['turnover_rate'] >= 1 ? 'medium' : 'low'); 
+                                            $rate = (float)($item['turnover_rate'] ?? 0);
+                                            echo $rate >= 2 ? 'high' : ($rate >= 1 ? 'medium' : 'low'); 
                                         ?>">
-                                            <?php echo $item['turnover_rate']; ?>x
+                                            <?php echo number_format($rate, 2); ?>x
                                         </span>
                                     </td>
                                 </tr>
@@ -837,13 +857,13 @@ include '../includes/admin_header.php';
                         <div class="metric-item">
                             <div class="metric-label">
                                 <span><?php echo $payment['payment_method'] ?? 'N/A'; ?></span>
-                                <span class="metric-value">$<?php echo number_format($payment['total_amount'], 2); ?></span>
+                                <span class="metric-value">$<?php echo number_format((float)($payment['total_amount'] ?? 0), 2); ?></span>
                             </div>
                             <div class="metric-bar">
                                 <div class="progress">
-                                    <div class="progress-bar" style="width: <?php echo $payment['percentage']; ?>%;"></div>
+                                    <div class="progress-bar" style="width: <?php echo min(100, (float)($payment['percentage'] ?? 0)); ?>%;"></div>
                                 </div>
-                                <span class="metric-percentage"><?php echo round($payment['percentage'], 1); ?>%</span>
+                                <span class="metric-percentage"><?php echo round((float)($payment['percentage'] ?? 0), 1); ?>%</span>
                             </div>
                         </div>
                         <?php endwhile; ?>
@@ -860,18 +880,21 @@ include '../includes/admin_header.php';
                     <h6><i class="fas fa-chart-bar me-2"></i>Price Range Analysis</h6>
                 </div>
                 <div class="metrics-body">
-                    <?php foreach ($price_range_data as $range => $data): ?>
-                        <?php if ($data): ?>
+                    <?php 
+                    $total_revenue = (float)($current['revenue'] ?? 0);
+                    foreach ($price_range_data as $range => $data): 
+                        if ($data && isset($data['revenue']) && $data['revenue'] > 0):
+                    ?>
                         <div class="metric-item">
                             <div class="metric-label">
                                 <span>$<?php echo $range; ?></span>
-                                <span class="metric-value"><?php echo $data['quantity_sold'] ?? 0; ?> units</span>
+                                <span class="metric-value"><?php echo (int)($data['quantity_sold'] ?? 0); ?> units</span>
                             </div>
                             <div class="metric-bar">
                                 <div class="progress">
-                                    <div class="progress-bar" style="width: <?php echo ($data['revenue'] / $total_revenue) * 100; ?>%;"></div>
+                                    <div class="progress-bar" style="width: <?php echo $total_revenue > 0 ? min(100, ((float)($data['revenue'] ?? 0) / $total_revenue) * 100) : 0; ?>%;"></div>
                                 </div>
-                                <span class="metric-percentage">$<?php echo number_format($data['revenue'] ?? 0, 0); ?></span>
+                                <span class="metric-percentage">$<?php echo number_format((float)($data['revenue'] ?? 0), 0); ?></span>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -890,14 +913,14 @@ include '../includes/admin_header.php';
                         <?php while ($city = mysqli_fetch_assoc($top_cities_result)): ?>
                         <div class="metric-item">
                             <div class="metric-label">
-                                <span><?php echo htmlspecialchars($city['city']); ?>, <?php echo $city['country']; ?></span>
-                                <span class="metric-value"><?php echo $city['order_count']; ?> orders</span>
+                                <span><?php echo htmlspecialchars($city['city'] ?? 'Unknown'); ?>, <?php echo $city['country'] ?? 'Unknown'; ?></span>
+                                <span class="metric-value"><?php echo (int)($city['order_count'] ?? 0); ?> orders</span>
                             </div>
                             <div class="metric-bar">
                                 <div class="progress">
-                                    <div class="progress-bar" style="width: <?php echo ($city['revenue'] / $total_revenue) * 100; ?>%;"></div>
+                                    <div class="progress-bar" style="width: <?php echo $total_revenue > 0 ? min(100, ((float)($city['revenue'] ?? 0) / $total_revenue) * 100) : 0; ?>%;"></div>
                                 </div>
-                                <span class="metric-percentage">$<?php echo number_format($city['revenue'], 0); ?></span>
+                                <span class="metric-percentage">$<?php echo number_format((float)($city['revenue'] ?? 0), 0); ?></span>
                             </div>
                         </div>
                         <?php endwhile; ?>
@@ -919,7 +942,7 @@ include '../includes/admin_header.php';
                 <div class="metric-details">
                     <span class="metric-title">Conversion Rate</span>
                     <span class="metric-number"><?php echo $conversion_rate; ?>%</span>
-                    <span class="metric-sub"><?php echo $conversion_data['buying_customers']; ?> of <?php echo $conversion_data['total_customers']; ?> customers</span>
+                    <span class="metric-sub"><?php echo (int)($conversion_data['buying_customers'] ?? 0); ?> of <?php echo (int)($conversion_data['total_customers'] ?? 0); ?> customers</span>
                 </div>
             </div>
         </div>
@@ -932,7 +955,7 @@ include '../includes/admin_header.php';
                 <div class="metric-details">
                     <span class="metric-title">Repeat Purchase Rate</span>
                     <span class="metric-number"><?php echo $repeat_rate; ?>%</span>
-                    <span class="metric-sub"><?php echo $repeat_data['repeat_customers']; ?> returning customers</span>
+                    <span class="metric-sub"><?php echo (int)($repeat_data['repeat_customers'] ?? 0); ?> returning customers</span>
                 </div>
             </div>
         </div>
@@ -944,8 +967,8 @@ include '../includes/admin_header.php';
                 </div>
                 <div class="metric-details">
                     <span class="metric-title">Avg Items/Order</span>
-                    <span class="metric-number"><?php echo round($avg_items_data['avg_items_per_order'] ?? 0, 1); ?></span>
-                    <span class="metric-sub"><?php echo $current['items_sold']; ?> total items</span>
+                    <span class="metric-number"><?php echo round((float)($avg_items_data['avg_items_per_order'] ?? 0), 1); ?></span>
+                    <span class="metric-sub"><?php echo (int)($current['items_sold'] ?? 0); ?> total items</span>
                 </div>
             </div>
         </div>
@@ -957,15 +980,15 @@ include '../includes/admin_header.php';
                 </div>
                 <div class="metric-details">
                     <span class="metric-title">Tax Collected</span>
-                    <span class="metric-number">$<?php echo number_format($tax_data['total_tax'] ?? 0, 2); ?></span>
-                    <span class="metric-sub"><?php echo round($tax_data['tax_percentage'] ?? 0, 1); ?>% of revenue</span>
+                    <span class="metric-number">$<?php echo number_format((float)($tax_data['total_tax'] ?? 0), 2); ?></span>
+                    <span class="metric-sub"><?php echo round((float)($tax_data['tax_percentage'] ?? 0), 1); ?>% of revenue</span>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Monthly Trends (if range > 60 days) -->
-    <?php if ($days_diff > 60): ?>
+    <?php if ($days_diff > 60 && !empty($monthly_labels)): ?>
     <div class="row mb-4">
         <div class="col-12">
             <div class="chart-card">
@@ -987,18 +1010,18 @@ include '../includes/admin_header.php';
 <!-- Chart.js Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-// Prepare data for charts
-const dailyLabels = <?php echo json_encode($daily_labels); ?>;
-const dailyOrders = <?php echo json_encode($daily_orders); ?>;
-const dailyRevenue = <?php echo json_encode($daily_revenue); ?>;
+// Prepare data for charts with fallbacks
+const dailyLabels = <?php echo json_encode($daily_labels ?: []); ?>;
+const dailyOrders = <?php echo json_encode($daily_orders ?: []); ?>;
+const dailyRevenue = <?php echo json_encode($daily_revenue ?: []); ?>;
 
-const hourlyLabels = <?php echo json_encode($hourly_labels); ?>;
-const hourlyOrders = <?php echo json_encode(array_values($hourly_orders)); ?>;
-const hourlyRevenue = <?php echo json_encode(array_values($hourly_revenue)); ?>;
+const hourlyLabels = <?php echo json_encode($hourly_labels ?: []); ?>;
+const hourlyOrders = <?php echo json_encode(array_values($hourly_orders ?: array_fill(0, 24, 0))); ?>;
+const hourlyRevenue = <?php echo json_encode(array_values($hourly_revenue ?: array_fill(0, 24, 0))); ?>;
 
-const dowLabels = <?php echo json_encode($dow_labels); ?>;
-const dowOrders = <?php echo json_encode($dow_orders); ?>;
-const dowRevenue = <?php echo json_encode($dow_revenue); ?>;
+const dowLabels = <?php echo json_encode($dow_labels ?: []); ?>;
+const dowOrders = <?php echo json_encode($dow_orders ?: []); ?>;
+const dowRevenue = <?php echo json_encode($dow_revenue ?: []); ?>;
 
 // Customer type data
 const customerTypeData = {
@@ -1008,12 +1031,12 @@ const customerTypeData = {
 };
 
 <?php
-if ($customer_type_result) {
+if ($customer_type_result && mysqli_num_rows($customer_type_result) > 0) {
     mysqli_data_seek($customer_type_result, 0);
     while ($row = mysqli_fetch_assoc($customer_type_result)) {
-        echo "customerTypeData.labels.push('" . $row['customer_type'] . "');\n";
-        echo "customerTypeData.counts.push(" . $row['customer_count'] . ");\n";
-        echo "customerTypeData.revenue.push(" . $row['revenue'] . ");\n";
+        echo "customerTypeData.labels.push('" . addslashes($row['customer_type']) . "');\n";
+        echo "customerTypeData.counts.push(" . (int)($row['customer_count'] ?? 0) . ");\n";
+        echo "customerTypeData.revenue.push(" . (float)($row['revenue'] ?? 0) . ");\n";
     }
 }
 ?>
@@ -1024,300 +1047,185 @@ $monthly_labels = [];
 $monthly_orders = [];
 $monthly_revenue = [];
 
-if ($monthly_trend_result) {
+if ($monthly_trend_result && mysqli_num_rows($monthly_trend_result) > 0) {
     mysqli_data_seek($monthly_trend_result, 0);
     while ($row = mysqli_fetch_assoc($monthly_trend_result)) {
         $monthly_labels[] = $row['month_name'];
-        $monthly_orders[] = $row['orders'];
-        $monthly_revenue[] = $row['revenue'];
+        $monthly_orders[] = (int)$row['orders'];
+        $monthly_revenue[] = (float)$row['revenue'];
     }
 }
 ?>
 
-// Initialize Daily Trend Chart
-const dailyCtx = document.getElementById('dailyTrendChart').getContext('2d');
-let dailyChart = new Chart(dailyCtx, {
-    type: 'line',
-    data: {
-        labels: dailyLabels,
-        datasets: [
-            {
-                label: 'Revenue ($)',
-                data: dailyRevenue,
-                borderColor: '#1e3a5f',
-                backgroundColor: 'rgba(30,58,95,0.1)',
-                tension: 0.4,
-                yAxisID: 'y'
-            },
-            {
-                label: 'Orders',
-                data: dailyOrders,
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40,167,69,0.1)',
-                tension: 0.4,
-                yAxisID: 'y1'
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-            mode: 'index',
-            intersect: false
-        },
-        plugins: {
-            legend: {
-                position: 'top',
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        let label = context.dataset.label || '';
-                        if (label) {
-                            label += ': ';
+// Safe wrapper for Chart.js initialization
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        // Initialize Daily Trend Chart
+        const dailyCtx = document.getElementById('dailyTrendChart')?.getContext('2d');
+        if (dailyCtx) {
+            window.dailyChart = new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: dailyLabels.length ? dailyLabels : ['No Data'],
+                    datasets: [
+                        {
+                            label: 'Revenue ($)',
+                            data: dailyRevenue.length ? dailyRevenue : [0],
+                            borderColor: '#1e3a5f',
+                            backgroundColor: 'rgba(30,58,95,0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Orders',
+                            data: dailyOrders.length ? dailyOrders : [0],
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40,167,69,0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
                         }
-                        if (context.dataset.label.includes('Revenue')) {
-                            label += '$' + context.parsed.y.toFixed(2);
-                        } else {
-                            label += context.parsed.y;
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+        }
+
+        // Initialize Customer Type Chart
+        const customerCtx = document.getElementById('customerTypeChart')?.getContext('2d');
+        if (customerCtx && customerTypeData.labels.length) {
+            new Chart(customerCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: customerTypeData.labels,
+                    datasets: [{
+                        data: customerTypeData.revenue,
+                        backgroundColor: ['#1e3a5f', '#28a745'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+
+        // Initialize Hourly Chart
+        const hourlyCtx = document.getElementById('hourlyChart')?.getContext('2d');
+        if (hourlyCtx) {
+            new Chart(hourlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: hourlyLabels,
+                    datasets: [{
+                        label: 'Orders',
+                        data: hourlyOrders,
+                        backgroundColor: '#1e3a5f'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Initialize Day of Week Chart
+        const dowCtx = document.getElementById('dowChart')?.getContext('2d');
+        if (dowCtx && dowLabels.length) {
+            new Chart(dowCtx, {
+                type: 'bar',
+                data: {
+                    labels: dowLabels,
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: dowRevenue,
+                        backgroundColor: '#28a745'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Initialize Monthly Trend Chart if it exists
+        <?php if ($days_diff > 60 && !empty($monthly_labels)): ?>
+        const monthlyCtx = document.getElementById('monthlyTrendChart')?.getContext('2d');
+        if (monthlyCtx) {
+            new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: <?php echo json_encode($monthly_labels); ?>,
+                    datasets: [
+                        {
+                            label: 'Revenue ($)',
+                            data: <?php echo json_encode($monthly_revenue); ?>,
+                            borderColor: '#1e3a5f',
+                            backgroundColor: 'rgba(30,58,95,0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Orders',
+                            data: <?php echo json_encode($monthly_orders); ?>,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40,167,69,0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
                         }
-                        return label;
-                    }
-                }
-            }
-        },
-        scales: {
-            y: {
-                type: 'linear',
-                display: true,
-                position: 'left',
-                title: {
-                    display: true,
-                    text: 'Revenue ($)'
+                    ]
                 },
-                ticks: {
-                    callback: function(value) {
-                        return '$' + value;
-                    }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } }
                 }
-            },
-            y1: {
-                type: 'linear',
-                display: true,
-                position: 'right',
-                title: {
-                    display: true,
-                    text: 'Orders'
-                },
-                grid: {
-                    drawOnChartArea: false
-                }
-            }
+            });
         }
-    }
-});
+        <?php endif; ?>
 
-// Initialize Customer Type Chart
-const customerCtx = document.getElementById('customerTypeChart').getContext('2d');
-new Chart(customerCtx, {
-    type: 'doughnut',
-    data: {
-        labels: customerTypeData.labels,
-        datasets: [{
-            data: customerTypeData.revenue,
-            backgroundColor: ['#1e3a5f', '#28a745'],
-            borderWidth: 0
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom'
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        const label = context.label || '';
-                        const value = context.raw || 0;
-                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                        return `${label}: $${value.toFixed(2)} (${percentage}%)`;
-                    }
-                }
-            }
-        },
-        cutout: '60%'
+    } catch (error) {
+        console.error('Chart initialization error:', error);
     }
 });
-
-// Initialize Hourly Chart
-const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
-new Chart(hourlyCtx, {
-    type: 'bar',
-    data: {
-        labels: hourlyLabels,
-        datasets: [
-            {
-                label: 'Orders',
-                data: hourlyOrders,
-                backgroundColor: '#1e3a5f',
-                yAxisID: 'y'
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: false
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return 'Orders: ' + context.parsed.y;
-                    }
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                title: {
-                    display: true,
-                    text: 'Number of Orders'
-                }
-            }
-        }
-    }
-});
-
-// Initialize Day of Week Chart
-const dowCtx = document.getElementById('dowChart').getContext('2d');
-new Chart(dowCtx, {
-    type: 'bar',
-    data: {
-        labels: dowLabels,
-        datasets: [
-            {
-                label: 'Revenue ($)',
-                data: dowRevenue,
-                backgroundColor: '#28a745',
-                yAxisID: 'y'
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: false
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return 'Revenue: $' + context.parsed.y.toFixed(2);
-                    }
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                title: {
-                    display: true,
-                    text: 'Revenue ($)'
-                },
-                ticks: {
-                    callback: function(value) {
-                        return '$' + value;
-                    }
-                }
-            }
-        }
-    }
-});
-
-// Initialize Monthly Trend Chart if it exists
-<?php if ($days_diff > 60): ?>
-const monthlyCtx = document.getElementById('monthlyTrendChart').getContext('2d');
-new Chart(monthlyCtx, {
-    type: 'line',
-    data: {
-        labels: <?php echo json_encode($monthly_labels); ?>,
-        datasets: [
-            {
-                label: 'Revenue ($)',
-                data: <?php echo json_encode($monthly_revenue); ?>,
-                borderColor: '#1e3a5f',
-                backgroundColor: 'rgba(30,58,95,0.1)',
-                tension: 0.4,
-                yAxisID: 'y'
-            },
-            {
-                label: 'Orders',
-                data: <?php echo json_encode($monthly_orders); ?>,
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40,167,69,0.1)',
-                tension: 0.4,
-                yAxisID: 'y1'
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top'
-            }
-        },
-        scales: {
-            y: {
-                type: 'linear',
-                display: true,
-                position: 'left',
-                ticks: {
-                    callback: function(value) {
-                        return '$' + value;
-                    }
-                }
-            },
-            y1: {
-                type: 'linear',
-                display: true,
-                position: 'right',
-                grid: {
-                    drawOnChartArea: false
-                }
-            }
-        }
-    }
-});
-<?php endif; ?>
 
 // Toggle daily chart type
 function toggleDailyChart() {
-    if (dailyChart.config.type === 'line') {
-        dailyChart.destroy();
-        dailyChart = new Chart(dailyCtx, {
+    const dailyCtx = document.getElementById('dailyTrendChart')?.getContext('2d');
+    if (!dailyCtx || !window.dailyChart) return;
+    
+    if (window.dailyChart.config.type === 'line') {
+        window.dailyChart.destroy();
+        window.dailyChart = new Chart(dailyCtx, {
             type: 'bar',
             data: {
-                labels: dailyLabels,
+                labels: dailyLabels.length ? dailyLabels : ['No Data'],
                 datasets: [
                     {
                         label: 'Revenue ($)',
-                        data: dailyRevenue,
+                        data: dailyRevenue.length ? dailyRevenue : [0],
                         backgroundColor: '#1e3a5f',
                         yAxisID: 'y'
                     },
                     {
                         label: 'Orders',
-                        data: dailyOrders,
+                        data: dailyOrders.length ? dailyOrders : [0],
                         backgroundColor: '#28a745',
                         yAxisID: 'y1'
                     }
@@ -1326,71 +1234,19 @@ function toggleDailyChart() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.dataset.label.includes('Revenue')) {
-                                    label += '$' + context.parsed.y.toFixed(2);
-                                } else {
-                                    label += context.parsed.y;
-                                }
-                                return label;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Revenue ($)'
-                        },
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + value;
-                            }
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Orders'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        }
-                    }
-                }
+                plugins: { legend: { position: 'top' } }
             }
         });
     } else {
-        dailyChart.destroy();
-        dailyChart = new Chart(dailyCtx, {
+        window.dailyChart.destroy();
+        window.dailyChart = new Chart(dailyCtx, {
             type: 'line',
             data: {
-                labels: dailyLabels,
+                labels: dailyLabels.length ? dailyLabels : ['No Data'],
                 datasets: [
                     {
                         label: 'Revenue ($)',
-                        data: dailyRevenue,
+                        data: dailyRevenue.length ? dailyRevenue : [0],
                         borderColor: '#1e3a5f',
                         backgroundColor: 'rgba(30,58,95,0.1)',
                         tension: 0.4,
@@ -1398,7 +1254,7 @@ function toggleDailyChart() {
                     },
                     {
                         label: 'Orders',
-                        data: dailyOrders,
+                        data: dailyOrders.length ? dailyOrders : [0],
                         borderColor: '#28a745',
                         backgroundColor: 'rgba(40,167,69,0.1)',
                         tension: 0.4,
@@ -1409,102 +1265,60 @@ function toggleDailyChart() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.dataset.label.includes('Revenue')) {
-                                    label += '$' + context.parsed.y.toFixed(2);
-                                } else {
-                                    label += context.parsed.y;
-                                }
-                                return label;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Revenue ($)'
-                        },
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + value;
-                            }
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Orders'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        }
-                    }
-                }
+                plugins: { legend: { position: 'top' } }
             }
         });
     }
 }
 
-// Export analytics function
+// Simple notification function that doesn't rely on external code
+function showSimpleNotification(message, type = 'success') {
+    alert(message); // Simple fallback
+}
+
+// Export analytics function with safe notification
 function exportAnalytics() {
-    // Collect data from the current view
-    const data = [];
-    
-    // Add headers
-    data.push(['Advanced Analytics Report', '']);
-    data.push(['Date Range', '<?php echo $start_date; ?> to <?php echo $end_date; ?>']);
-    data.push(['Generated', new Date().toLocaleString()]);
-    data.push(['']);
-    
-    // Add summary metrics
-    data.push(['KEY METRICS']);
-    data.push(['Total Revenue', '$<?php echo number_format($current['revenue'], 2); ?>']);
-    data.push(['Total Orders', '<?php echo $current['orders']; ?>']);
-    data.push(['Unique Customers', '<?php echo $current['customers']; ?>']);
-    data.push(['Avg Order Value', '$<?php echo number_format($current['avg_order_value'], 2); ?>']);
-    data.push(['Items Sold', '<?php echo $current['items_sold']; ?>']);
-    data.push(['']);
-    
-    // Add advanced metrics
-    data.push(['ADVANCED METRICS']);
-    data.push(['Conversion Rate', '<?php echo $conversion_rate; ?>%']);
-    data.push(['Repeat Purchase Rate', '<?php echo $repeat_rate; ?>%']);
-    data.push(['Avg Items per Order', '<?php echo round($avg_items_data['avg_items_per_order'] ?? 0, 1); ?>']);
-    data.push(['Tax Collected', '$<?php echo number_format($tax_data['total_tax'] ?? 0, 2); ?>']);
-    
-    // Create CSV
-    let csv = data.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'analytics_report_<?php echo $start_date; ?>_to_<?php echo $end_date; ?>.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
-    showNotification('Analytics report exported successfully', 'success');
+    try {
+        // Collect data from the current view
+        const data = [];
+        
+        // Add headers
+        data.push(['Advanced Analytics Report', '']);
+        data.push(['Date Range', '<?php echo $start_date; ?> to <?php echo $end_date; ?>']);
+        data.push(['Generated', new Date().toLocaleString()]);
+        data.push(['']);
+        
+        // Add summary metrics
+        data.push(['KEY METRICS']);
+        data.push(['Total Revenue', '$<?php echo number_format((float)($current['revenue'] ?? 0), 2); ?>']);
+        data.push(['Total Orders', '<?php echo (int)($current['orders'] ?? 0); ?>']);
+        data.push(['Unique Customers', '<?php echo (int)($current['customers'] ?? 0); ?>']);
+        data.push(['Avg Order Value', '$<?php echo number_format((float)($current['avg_order_value'] ?? 0), 2); ?>']);
+        data.push(['Items Sold', '<?php echo (int)($current['items_sold'] ?? 0); ?>']);
+        data.push(['']);
+        
+        // Add advanced metrics
+        data.push(['ADVANCED METRICS']);
+        data.push(['Conversion Rate', '<?php echo $conversion_rate; ?>%']);
+        data.push(['Repeat Purchase Rate', '<?php echo $repeat_rate; ?>%']);
+        data.push(['Avg Items per Order', '<?php echo round((float)($avg_items_data['avg_items_per_order'] ?? 0), 1); ?>']);
+        data.push(['Tax Collected', '$<?php echo number_format((float)($tax_data['total_tax'] ?? 0), 2); ?>']);
+        
+        // Create CSV
+        let csv = data.map(row => row.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'analytics_report_<?php echo $start_date; ?>_to_<?php echo $end_date; ?>.csv';
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        alert('Analytics report exported successfully'); // Simple alert instead of notification
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Error exporting report. Please try again.');
+    }
 }
 
 // Refresh data
@@ -1512,473 +1326,3 @@ function refreshData() {
     location.reload();
 }
 </script>
-
-<style>
-/* ===== ANALYTICS PAGE SPECIFIC STYLES ===== */
-
-/* KPI Cards */
-.kpi-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    transition: var(--transition);
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-}
-
-.kpi-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-}
-
-.kpi-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-}
-
-.kpi-icon.revenue {
-    background: rgba(30,58,95,0.1);
-    color: var(--primary);
-}
-
-.kpi-icon.orders {
-    background: rgba(40,167,69,0.1);
-    color: var(--success);
-}
-
-.kpi-icon.customers {
-    background: rgba(255,193,7,0.1);
-    color: var(--warning);
-}
-
-.kpi-icon.avg-order {
-    background: rgba(13,202,240,0.1);
-    color: var(--info);
-}
-
-.kpi-content {
-    flex: 1;
-}
-
-.kpi-label {
-    display: block;
-    font-size: 0.85rem;
-    color: var(--dark-gray);
-    margin-bottom: 0.25rem;
-}
-
-.kpi-value {
-    display: block;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--dark);
-    line-height: 1.2;
-    margin-bottom: 0.25rem;
-}
-
-.kpi-trend {
-    display: inline-block;
-    padding: 0.2rem 0.5rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.kpi-trend.trend-up {
-    background: #d1e7dd;
-    color: #0a3622;
-}
-
-.kpi-trend.trend-down {
-    background: #f8d7da;
-    color: #842029;
-}
-
-/* Analytics Cards */
-.analytics-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    height: 100%;
-}
-
-.analytics-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--light);
-}
-
-.analytics-header h6 {
-    margin: 0;
-    color: var(--dark);
-    font-weight: 600;
-}
-
-.analytics-body {
-    padding: 1rem;
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-/* Analytics Table */
-.analytics-table {
-    width: 100%;
-    font-size: 0.9rem;
-}
-
-.analytics-table thead th {
-    background: transparent;
-    color: var(--dark-gray);
-    font-weight: 600;
-    font-size: 0.8rem;
-    border-bottom: 1px solid var(--border);
-    padding: 0.5rem;
-    text-align: left;
-}
-
-.analytics-table tbody td {
-    padding: 0.5rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.analytics-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.analytics-table tbody tr:hover {
-    background: var(--light);
-}
-
-/* Metrics Cards */
-.metrics-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    height: 100%;
-}
-
-.metrics-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--light);
-}
-
-.metrics-header h6 {
-    margin: 0;
-    color: var(--dark);
-    font-weight: 600;
-}
-
-.metrics-body {
-    padding: 1.5rem;
-}
-
-.metric-item {
-    margin-bottom: 1rem;
-}
-
-.metric-item:last-child {
-    margin-bottom: 0;
-}
-
-.metric-label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.25rem;
-    font-size: 0.9rem;
-}
-
-.metric-value {
-    font-weight: 600;
-    color: var(--primary);
-}
-
-.metric-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.metric-bar .progress {
-    flex: 1;
-    height: 8px;
-    background: var(--light);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.metric-bar .progress-bar {
-    height: 100%;
-    background: var(--primary);
-    border-radius: 4px;
-}
-
-.metric-percentage {
-    min-width: 50px;
-    font-size: 0.85rem;
-    color: var(--dark-gray);
-    text-align: right;
-}
-
-/* Advanced Metric Cards */
-.advanced-metric-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    transition: var(--transition);
-    height: 100%;
-}
-
-.advanced-metric-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-}
-
-.metric-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-}
-
-.metric-icon.conversion {
-    background: rgba(111,66,193,0.1);
-    color: #6f42c1;
-}
-
-.metric-icon.repeat {
-    background: rgba(255,193,7,0.1);
-    color: var(--warning);
-}
-
-.metric-icon.items {
-    background: rgba(40,167,69,0.1);
-    color: var(--success);
-}
-
-.metric-icon.tax {
-    background: rgba(220,53,69,0.1);
-    color: var(--danger);
-}
-
-.metric-details {
-    flex: 1;
-}
-
-.metric-title {
-    display: block;
-    font-size: 0.85rem;
-    color: var(--dark-gray);
-    margin-bottom: 0.25rem;
-}
-
-.metric-number {
-    display: block;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--dark);
-    line-height: 1.2;
-    margin-bottom: 0.25rem;
-}
-
-.metric-sub {
-    font-size: 0.8rem;
-    color: var(--dark-gray);
-}
-
-/* Product Info Small */
-.product-info-sm {
-    line-height: 1.3;
-}
-
-.product-name {
-    font-weight: 500;
-    color: var(--dark);
-}
-
-.product-sku {
-    font-size: 0.75rem;
-    color: var(--dark-gray);
-}
-
-/* Turnover Badge */
-.turnover-badge {
-    display: inline-block;
-    padding: 0.2rem 0.5rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.turnover-badge.rate-high {
-    background: #d1e7dd;
-    color: #0a3622;
-}
-
-.turnover-badge.rate-medium {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.turnover-badge.rate-low {
-    background: #f8d7da;
-    color: #842029;
-}
-
-/* Percentage Bar */
-.percentage-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.percentage-value {
-    font-size: 0.8rem;
-    color: var(--dark-gray);
-    min-width: 35px;
-}
-
-/* Chart Cards */
-.chart-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    height: 100%;
-}
-
-.chart-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--light);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.chart-header h6 {
-    margin: 0;
-    color: var(--dark);
-    font-weight: 600;
-}
-
-.chart-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.chart-body {
-    padding: 1.5rem;
-    height: 300px;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .kpi-card {
-        padding: 1rem;
-    }
-    
-    .kpi-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 1.5rem;
-    }
-    
-    .kpi-value {
-        font-size: 1.4rem;
-    }
-    
-    .chart-body {
-        height: 250px;
-    }
-    
-    .advanced-metric-card {
-        padding: 1rem;
-    }
-    
-    .metric-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 1.5rem;
-    }
-    
-    .metric-number {
-        font-size: 1.4rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .kpi-card {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .metric-item {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .metric-bar {
-        width: 100%;
-    }
-    
-    .percentage-bar {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-}
-
-/* Print Styles */
-@media print {
-    .btn,
-    .filter-actions,
-    .chart-actions,
-    .page-actions,
-    .back-to-top {
-        display: none !important;
-    }
-    
-    .page-header-box {
-        border: none;
-        box-shadow: none;
-    }
-    
-    .kpi-card,
-    .advanced-metric-card {
-        border: 1px solid #000;
-        box-shadow: none;
-        page-break-inside: avoid;
-    }
-    
-    .chart-card,
-    .analytics-card,
-    .metrics-card {
-        break-inside: avoid;
-        border: 1px solid #000;
-        box-shadow: none;
-    }
-}
-</style>
