@@ -915,3 +915,40 @@ Stack trace:
 
 [20-Feb-2026 05:22:44 UTC] User OTP: '697021' (type: string)
 [20-Feb-2026 05:22:44 UTC] Stored OTP: '697021' (type: string)
+[22-Feb-2026 16:10:32 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: No connection could be made because the target machine actively refused it in C:\xampp\htdocs\jenny_cosmetics - Copy\config\database.php:43
+Stack trace:
+#0 C:\xampp\htdocs\jenny_cosmetics - Copy\config\database.php(43): mysqli_connect('localhost', 'root', Object(SensitiveParameterValue), 'jenny_cosmetics...')
+#1 C:\xampp\htdocs\jenny_cosmetics - Copy\products.php(8): require_once('C:\\xampp\\htdocs...')
+#2 {main}
+  thrown in C:\xampp\htdocs\jenny_cosmetics - Copy\config\database.php on line 43
+[22-Feb-2026 16:03:12 UTC] PHP Warning:  Undefined array key "created_at" in C:\xampp\htdocs\jenny_cosmetics - Copy\profile.php on line 133
+[22-Feb-2026 16:03:12 UTC] PHP Deprecated:  strtotime(): Passing null to parameter #1 ($datetime) of type string is deprecated in C:\xampp\htdocs\jenny_cosmetics - Copy\profile.php on line 133
+[22-Feb-2026 19:19:12 UTC] ========== CHECKOUT POST RECEIVED ==========
+[22-Feb-2026 19:19:12 UTC] POST data: Array
+(
+    [csrf_token] => 9b15f6f9fa90cc1fc0867369667b08871fc762cde1b693801dbf99f775a8b422
+    [shipping_address] => 456 Oak Avenue, Apt 1B (or just 456 Oak Ave), NEW YORK,
+    [payment_method] => Credit Card
+    [notes] => 
+)
+
+[22-Feb-2026 19:19:12 UTC] Place order button NOT detected in POST
+[22-Feb-2026 19:19:20 UTC] ========== CHECKOUT POST RECEIVED ==========
+[22-Feb-2026 19:19:20 UTC] POST data: Array
+(
+    [csrf_token] => 9b15f6f9fa90cc1fc0867369667b08871fc762cde1b693801dbf99f775a8b422
+    [shipping_address] => 456 Oak Avenue, Apt 1B (or just 456 Oak Ave), NEW YORK,
+    [billing_address] => 456 Oak Avenue, Apt 1B (or just 456 Oak Ave), NEW YORK,
+    [payment_method] => Credit Card
+    [notes] => 
+)
+
+[22-Feb-2026 19:19:20 UTC] Place order button NOT detected in POST
+[22-Feb-2026 20:02:28 UTC] PHP Warning:  include(../includes/footer.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\jenny_cosmetics - Copy\signup.php on line 923
+[22-Feb-2026 20:02:28 UTC] PHP Warning:  include(): Failed opening '../includes/footer.php' for inclusion (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\jenny_cosmetics - Copy\signup.php on line 923
+[22-Feb-2026 20:05:12 UTC] PHP Warning:  include(&lt;div class=&quot;&quot;&gt;includes/footer.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\jenny_cosmetics - Copy\signup.php on line 923
+[22-Feb-2026 20:05:12 UTC] PHP Warning:  include(): Failed opening '&lt;div class=&quot;&quot;&gt;includes/footer.php' for inclusion (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\jenny_cosmetics - Copy\signup.php on line 923
+[22-Feb-2026 20:05:37 UTC] PHP Warning:  include(../includes/footer.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\jenny_cosmetics - Copy\signup.php on line 923
+[22-Feb-2026 20:05:37 UTC] PHP Warning:  include(): Failed opening '../includes/footer.php' for inclusion (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\jenny_cosmetics - Copy\signup.php on line 923
+[22-Feb-2026 20:09:27 UTC] User OTP: '580997' (type: string)
+[22-Feb-2026 20:09:27 UTC] Stored OTP: '580997' (type: string)

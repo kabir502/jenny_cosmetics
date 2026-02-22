@@ -1,5 +1,5 @@
 <?php
-// signup.php
+// signup.php - User Registration with Luxury Theme
 session_start();
 require_once 'config/database.php';
 require_once 'config/constants.php';
@@ -10,270 +10,940 @@ require_once 'config/constants.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - <?php echo SITE_NAME; ?></title>
+    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { 
-            background-color: #f8f9fa; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* ===== SIGNUP PAGE LUXURY THEME ===== */
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #F4E5C1;
+            --gold-dark: #AA8C2F;
+            --navy: #1A2A4F;
+            --navy-light: #2A3F6F;
+            --navy-dark: #0F1A2F;
+            --pearl: #F8F6F0;
+            --charcoal: #36454F;
+            --transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         }
-        .signup-container { 
-            max-width: 550px; 
-            margin: 30px auto;
-            animation: fadeIn 0.5s ease-in;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .form-container { 
-            background: white; 
-            padding: 35px; 
-            border-radius: 15px; 
-            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
-            border: 1px solid #eaeaea;
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
-        h2 {
-            color: #2c3e50;
-            font-weight: 600;
-            margin-bottom: 25px;
+
+        body {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-height: 100vh;
         }
-        .form-label {
-            font-weight: 500;
-            color: #34495e;
-            margin-bottom: 8px;
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 70%);
+            animation: rotate 60s linear infinite;
+            pointer-events: none;
+            z-index: 0;
         }
-        .form-control {
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            transition: all 0.3s;
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
-        .form-control:focus {
-            border-color: #3498db;
-            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+
+        /* Main content wrapper - THIS IS KEY FOR FOOTER POSITIONING */
+        .main-wrapper {
+            flex: 1 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem 1rem;
+            position: relative;
+            z-index: 2;
+            width: 100%;
         }
-        .required::after {
-            content: " *";
-            color: #e74c3c;
+
+        .signup-container {
+            max-width: 650px;
+            width: 100%;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease-out;
         }
-        .password-strength {
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Luxury Card */
+        .luxury-card {
+            background: white;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            border: 2px solid var(--gold);
+            position: relative;
+        }
+
+        .luxury-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
             height: 5px;
-            border-radius: 5px;
-            margin-top: 5px;
-            transition: all 0.3s;
+            background: linear-gradient(90deg, var(--gold-light), var(--gold), var(--gold-dark));
+            z-index: 3;
         }
-        .strength-weak { background-color: #e74c3c; width: 25%; }
-        .strength-medium { background-color: #f39c12; width: 50%; }
-        .strength-strong { background-color: #2ecc71; width: 75%; }
-        .strength-very-strong { background-color: #27ae60; width: 100%; }
-        .password-requirements {
-            font-size: 0.85rem;
-            color: #7f8c8d;
+
+        /* Card Header */
+        .card-header-luxury {
+            background: linear-gradient(135deg, var(--navy), var(--navy-light));
+            padding: 1.8rem 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
         }
-        .requirement {
-            margin-bottom: 3px;
+
+        .card-header-luxury::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
         }
-        .requirement.met {
-            color: #27ae60;
+
+        .brand-icon {
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.8rem;
+            font-size: 1.8rem;
+            color: var(--navy);
+            position: relative;
+            z-index: 2;
+            animation: sparkle 2s infinite;
+            border: 3px solid rgba(255,255,255,0.3);
         }
-        .requirement.met i {
-            color: #27ae60;
+
+        @keyframes sparkle {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 20px var(--gold);
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 0 0 40px var(--gold), 0 0 60px var(--gold-light);
+            }
         }
-        .btn-primary {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            border: none;
-            padding: 12px;
+
+        .card-header-luxury h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 0.2rem;
+            position: relative;
+            z-index: 2;
+            letter-spacing: -0.02em;
+        }
+
+        .card-header-luxury p {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            color: var(--gold-light);
+            position: relative;
+            z-index: 2;
+            font-style: italic;
+            margin-bottom: 0;
+        }
+
+        /* Card Body */
+        .card-body-luxury {
+            padding: 1.8rem;
+            background: white;
+        }
+
+        /* Form Labels */
+        .form-label {
+            font-family: 'Playfair Display', serif;
             font-weight: 600;
-            border-radius: 8px;
-            transition: all 0.3s;
+            color: var(--navy);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
         }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #2980b9, #1c5a7a);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(41, 128, 185, 0.3);
+
+        .form-label i {
+            color: var(--gold);
+            font-size: 0.8rem;
         }
-        .alert {
-            border-radius: 8px;
+
+        .required::after {
+            content: "*";
+            color: var(--gold);
+            margin-left: 0.2rem;
+            font-size: 0.9rem;
+        }
+
+        /* Form Controls */
+        .form-control, .form-select {
+            border: 2px solid rgba(212,175,55,0.2);
+            border-radius: 10px;
+            padding: 0.6rem 0.9rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            transition: var(--transition);
+            background: var(--pearl);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
+            outline: none;
+            background: white;
+        }
+
+        .input-group {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .input-group .form-control {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .input-group .btn-outline-luxury {
+            border: 2px solid rgba(212,175,55,0.2);
+            border-left: none;
+            background: var(--pearl);
+            color: var(--gold);
+            padding: 0 0.9rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-group .btn-outline-luxury:hover {
+            background: var(--gold);
+            color: var(--navy);
+            border-color: var(--gold);
+        }
+
+        /* Form Text */
+        .form-text {
+            font-family: 'Cormorant Garamond', serif;
+            color: var(--charcoal);
+            font-size: 0.8rem;
+            margin-top: 0.2rem;
+            font-style: italic;
+        }
+
+        /* Password Strength */
+        .password-strength {
+            height: 4px;
+            border-radius: 2px;
+            margin-top: 0.4rem;
+            background: #eee;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .password-strength::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: var(--strength-width, 0%);
+            background: linear-gradient(90deg, var(--gold-light), var(--gold));
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+
+        /* Password Requirements */
+        .password-requirements {
+            background: var(--pearl);
+            padding: 0.7rem;
+            border-radius: 10px;
+            margin-top: 0.7rem;
+            border: 1px solid rgba(212,175,55,0.2);
+        }
+
+        .requirement {
+            font-size: 0.75rem;
+            color: var(--charcoal);
+            margin-bottom: 0.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: var(--transition);
+        }
+
+        .requirement:last-child {
+            margin-bottom: 0;
+        }
+
+        .requirement i {
+            font-size: 0.45rem;
+            color: var(--charcoal);
+            transition: var(--transition);
+            width: 14px;
+        }
+
+        .requirement.met {
+            color: var(--navy);
+        }
+
+        .requirement.met i {
+            color: var(--gold);
+            font-size: 0.8rem;
+        }
+
+        /* Alerts */
+        .alert-luxury {
             border: none;
+            border-radius: 10px;
+            padding: 0.9rem 1.1rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            animation: slideDown 0.5s ease;
+            position: relative;
+            overflow: hidden;
         }
-        .login-link {
-            color: #3498db;
-            text-decoration: none;
-            font-weight: 500;
+
+        .alert-luxury::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
         }
-        .login-link:hover {
-            text-decoration: underline;
-            color: #2980b9;
+
+        .alert-danger {
+            background: #FFEBEE;
+            color: #B71C1C;
+            border: 1px solid #FFCDD2;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        .alert-danger::before {
+            background: #C62828;
         }
-        .form-check-input:checked {
-            background-color: #3498db;
-            border-color: #3498db;
+
+        .alert-success {
+            background: #E8F5E9;
+            color: #1B5E20;
+            border: 1px solid #C8E6C9;
         }
-        .terms-link {
-            color: #3498db;
+
+        .alert-success::before {
+            background: var(--gold);
+        }
+
+        .alert-luxury i {
+            font-size: 1.1rem;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Submit Button */
+        .btn-luxury {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            border: none;
+            color: var(--navy);
+            font-weight: 700;
+            padding: 0.9rem;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: var(--transition);
             cursor: pointer;
-            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            margin: 0.8rem 0 0.6rem;
+            border: 1px solid transparent;
         }
+
+        .btn-luxury::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-luxury:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .btn-luxury:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(212,175,55,0.3);
+        }
+
+        .btn-luxury i {
+            margin-right: 0.4rem;
+        }
+
+        /* Checkbox */
+        .form-check {
+            margin-bottom: 0.7rem;
+        }
+
+        .form-check-input {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(212,175,55,0.3);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 0.1rem;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--gold);
+            border-color: var(--gold);
+        }
+
+        .form-check-label {
+            color: var(--charcoal);
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .terms-link {
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            border-bottom: 1px solid transparent;
+        }
+
         .terms-link:hover {
-            text-decoration: underline;
+            color: var(--navy);
+            border-bottom-color: var(--gold);
+        }
+
+        /* Login Link */
+        .login-link {
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 700;
+            transition: var(--transition);
+            border-bottom: 2px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+        }
+
+        .login-link:hover {
+            color: var(--navy);
+            border-bottom-color: var(--gold);
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 0.8rem 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(212,175,55,0.2);
+        }
+
+        .divider span {
+            padding: 0 0.8rem;
+            color: var(--gold);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+        }
+
+        /* Footer note */
+        .footer-note {
+            text-align: center;
+            margin-top: 0.8rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(212,175,55,0.1);
+        }
+
+        .footer-note p {
+            color: var(--charcoal);
+            font-size: 0.75rem;
+            margin-bottom: 0;
+        }
+
+        .footer-note i {
+            color: var(--gold);
+            margin-right: 0.3rem;
+            font-size: 0.65rem;
+        }
+
+        /* Spacing adjustments */
+        .mb-4 {
+            margin-bottom: 1rem !important;
+        }
+
+        .mb-3 {
+            margin-bottom: 0.8rem !important;
+        }
+
+        .row {
+            margin-bottom: 0;
+        }
+
+        /* Footer styling - ensure it's visible */
+        footer, .footer {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid var(--gold);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--navy), var(--navy-light));
+            color: white;
+            border-bottom: 2px solid var(--gold);
+            padding: 1rem 1.2rem;
+        }
+
+        .modal-header .modal-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .modal-header .btn-close {
+            background: white;
+            opacity: 0.8;
+        }
+
+        .modal-body {
+            padding: 1.2rem;
+        }
+
+        .modal-body h6 {
+            font-family: 'Playfair Display', serif;
+            color: var(--navy);
+            font-weight: 700;
+            margin-top: 0.8rem;
+            margin-bottom: 0.2rem;
+            font-size: 0.95rem;
+        }
+
+        .modal-body h6:first-child {
+            margin-top: 0;
+        }
+
+        .modal-body p {
+            color: var(--charcoal);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 0.6rem;
+        }
+
+        .modal-footer {
+            border-top: 1px solid rgba(212,175,55,0.2);
+            padding: 1rem 1.2rem;
+        }
+
+        .modal-footer .btn-secondary {
+            background: var(--pearl);
+            color: var(--navy);
+            border: 2px solid var(--gold);
+            border-radius: 50px;
+            padding: 0.4rem 1.5rem;
+            font-weight: 600;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .modal-footer .btn-secondary:hover {
+            background: var(--gold);
+            color: var(--navy);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-wrapper {
+                padding: 1rem;
+            }
+            
+            .card-header-luxury {
+                padding: 1.5rem 1rem;
+            }
+            
+            .card-header-luxury h2 {
+                font-size: 1.8rem;
+            }
+            
+            .card-header-luxury p {
+                font-size: 1rem;
+            }
+            
+            .card-body-luxury {
+                padding: 1.2rem;
+            }
+            
+            .brand-icon {
+                width: 55px;
+                height: 55px;
+                font-size: 1.6rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-wrapper {
+                padding: 0.8rem;
+            }
+            
+            .card-header-luxury {
+                padding: 1.2rem 0.8rem;
+            }
+            
+            .card-header-luxury h2 {
+                font-size: 1.5rem;
+            }
+            
+            .card-body-luxury {
+                padding: 1rem;
+            }
+            
+            .btn-luxury {
+                padding: 0.7rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Loading State */
+        .btn-luxury.loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
+        }
+
+        .btn-luxury.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 3px solid var(--navy);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
     
-    <div class="container signup-container">
-        <div class="form-container">
-            <h2 class="text-center mb-4">Create Your Account</h2>
-            <p class="text-center text-muted mb-4">Join Jenny's Cosmetics & Jewelry today</p>
-            
-            <?php if (isset($_GET['error'])): ?>
-                <div class="alert alert-danger alert-dismissible fade show">
-                    <?php echo htmlspecialchars($_GET['error']); ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            <?php endif; ?>
-            
-            <?php if (isset($_GET['success'])): ?>
-                <div class="alert alert-success alert-dismissible fade show">
-                    <?php echo htmlspecialchars($_GET['success']); ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            <?php endif; ?>
-            
-            <form action="process_signup.php" method="POST" id="signupForm" novalidate>
-                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="first_name" class="form-label required">First Name</label>
-                        <input type="text" class="form-control" id="first_name" name="first_name" required 
-                               placeholder="Enter your first name">
-                        <div class="invalid-feedback">Please enter your first name.</div>
+    <!-- Main content wrapper - pushes footer down -->
+    <div class="main-wrapper">
+        <div class="signup-container">
+            <!-- Luxury Card -->
+            <div class="luxury-card">
+                <div class="card-header-luxury">
+                    <div class="brand-icon">
+                        <i class="fas fa-gem"></i>
                     </div>
-                    <div class="col-md-6">
-                        <label for="last_name" class="form-label required">Last Name</label>
-                        <input type="text" class="form-control" id="last_name" name="last_name" required
-                               placeholder="Enter your last name">
-                        <div class="invalid-feedback">Please enter your last name.</div>
-                    </div>
+                    <h2>Create Your Account</h2>
+                    <p>Join our exclusive circle of elegance</p>
                 </div>
                 
-                <div class="mb-3">
-                    <label for="email" class="form-label required">Email Address</label>
-                    <input type="email" class="form-control" id="email" name="email" required
-                           placeholder="example@domain.com">
-                    <div class="form-text">We'll send OTP to this email for verification</div>
-                    <div class="invalid-feedback">Please enter a valid email address.</div>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="phone_cell" class="form-label required">Mobile Number</label>
-                    <input type="tel" class="form-control" id="phone_cell" name="phone_cell" required
-                           placeholder="+1 (555) 123-4567">
-                    <div class="invalid-feedback">Please enter a valid phone number.</div>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="password" class="form-label required">Password</label>
-                    <div class="input-group">
-                        <input type="password" class="form-control" id="password" name="password" required
-                               minlength="8" placeholder="Create a strong password">
-                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                            <i class="fas fa-eye"></i>
+                <div class="card-body-luxury">
+                    <!-- Alert Messages -->
+                    <?php if (isset($_GET['error'])): ?>
+                        <div class="alert-luxury alert-danger alert-dismissible fade show">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <?php echo htmlspecialchars($_GET['error']); ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($_GET['success'])): ?>
+                        <div class="alert-luxury alert-success alert-dismissible fade show">
+                            <i class="fas fa-check-circle"></i>
+                            <?php echo htmlspecialchars($_GET['success']); ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <!-- Signup Form -->
+                    <form action="process_signup.php" method="POST" id="signupForm" novalidate>
+                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                        
+                        <!-- Name Fields -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label for="first_name" class="form-label required">
+                                    <i class="fas fa-user"></i> First Name
+                                </label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       required placeholder="Enter your first name">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label required">
+                                    <i class="fas fa-user"></i> Last Name
+                                </label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       required placeholder="Enter your last name">
+                            </div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="mb-4">
+                            <label for="email" class="form-label required">
+                                <i class="fas fa-envelope"></i> Email Address
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" required
+                                   placeholder="example@domain.com">
+                            <div class="form-text">
+                                <i class="fas fa-gem me-1"></i>We'll send OTP to this email for verification
+                            </div>
+                        </div>
+                        
+                        <!-- Mobile Number -->
+                        <div class="mb-4">
+                            <label for="phone_cell" class="form-label required">
+                                <i class="fas fa-phone-alt"></i> Mobile Number
+                            </label>
+                            <input type="tel" class="form-control" id="phone_cell" name="phone_cell" required
+                                   placeholder="+1 (555) 123-4567">
+                        </div>
+                        
+                        <!-- Password -->
+                        <div class="mb-4">
+                            <label for="password" class="form-label required">
+                                <i class="fas fa-lock"></i> Password
+                            </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       required minlength="8" placeholder="Create a strong password">
+                                <button class="btn-outline-luxury" type="button" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength" id="passwordStrength"></div>
+                            
+                            <!-- Password Requirements -->
+                            <div class="password-requirements">
+                                <div class="requirement" id="reqLength">
+                                    <i class="fas fa-circle"></i> At least 8 characters
+                                </div>
+                                <div class="requirement" id="reqUppercase">
+                                    <i class="fas fa-circle"></i> At least one uppercase letter
+                                </div>
+                                <div class="requirement" id="reqLowercase">
+                                    <i class="fas fa-circle"></i> At least one lowercase letter
+                                </div>
+                                <div class="requirement" id="reqNumber">
+                                    <i class="fas fa-circle"></i> At least one number
+                                </div>
+                                <div class="requirement" id="reqSpecial">
+                                    <i class="fas fa-circle"></i> At least one special character
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Confirm Password -->
+                        <div class="mb-4">
+                            <label for="confirm_password" class="form-label required">
+                                <i class="fas fa-lock"></i> Confirm Password
+                            </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="confirm_password" 
+                                       name="confirm_password" required placeholder="Confirm your password">
+                                <button class="btn-outline-luxury" type="button" id="toggleConfirmPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div id="passwordMatchMessage" class="form-text mt-2"></div>
+                        </div>
+                        
+                        <!-- Address Fields -->
+                        <div class="mb-4">
+                            <label for="address_street" class="form-label">
+                                <i class="fas fa-home"></i> Street Address
+                            </label>
+                            <input type="text" class="form-control" id="address_street" name="address_street"
+                                   placeholder="123 Main Street">
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label for="address_city" class="form-label">
+                                    <i class="fas fa-city"></i> City
+                                </label>
+                                <input type="text" class="form-control" id="address_city" name="address_city"
+                                       placeholder="New York">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="address_country" class="form-label">
+                                    <i class="fas fa-globe"></i> Country
+                                </label>
+                                <select class="form-select" id="address_country" name="address_country">
+                                    <option value="">Select Country</option>
+                                    <option value="USA">United States</option>
+                                    <option value="UK">United Kingdom</option>
+                                    <option value="Canada">Canada</option>
+                                    <option value="Australia">Australia</option>
+                                    <option value="Germany">Germany</option>
+                                    <option value="France">France</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Newsletter -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="newsletter" name="newsletter">
+                                <label class="form-check-label" for="newsletter">
+                                    <i class="fas fa-gem me-1" style="color: var(--gold);"></i>
+                                    Subscribe to our newsletter for exclusive updates
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Terms -->
+                        <div class="mb-4 form-check">
+                            <input type="checkbox" class="form-check-input" id="terms" required>
+                            <label class="form-check-label" for="terms">
+                                I agree to the 
+                                <a href="#" class="terms-link" data-bs-toggle="modal" data-bs-target="#termsModal">
+                                    Terms & Conditions
+                                </a> 
+                                and 
+                                <a href="#" class="terms-link" data-bs-toggle="modal" data-bs-target="#privacyModal">
+                                    Privacy Policy
+                                </a>
+                            </label>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn-luxury" name="signup_btn" id="signupBtn">
+                            <i class="fas fa-user-plus me-2"></i>Create Account
                         </button>
-                    </div>
-                    <div class="password-strength mt-2" id="passwordStrength"></div>
-                    <div class="password-requirements mt-2">
-                        <div class="requirement" id="reqLength"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> At least 8 characters</div>
-                        <div class="requirement" id="reqUppercase"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> At least one uppercase letter</div>
-                        <div class="requirement" id="reqLowercase"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> At least one lowercase letter</div>
-                        <div class="requirement" id="reqNumber"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> At least one number</div>
-                        <div class="requirement" id="reqSpecial"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> At least one special character</div>
-                    </div>
+                        
+                        <!-- Divider -->
+                        <div class="divider">
+                            <span>Already have an account?</span>
+                        </div>
+                        
+                        <!-- Login Link -->
+                        <div class="text-center">
+                            <a href="login.php" class="login-link">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Sign In Here
+                            </a>
+                        </div>
+                        
+                        <!-- Footer Note -->
+                        <div class="footer-note">
+                            <p>
+                                <i class="fas fa-gem"></i>
+                                Your information is secure with us
+                            </p>
+                        </div>
+                    </form>
                 </div>
-                
-                <div class="mb-3">
-                    <label for="confirm_password" class="form-label required">Confirm Password</label>
-                    <div class="input-group">
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required
-                               placeholder="Confirm your password">
-                        <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <div id="passwordMatchMessage" class="form-text mt-1"></div>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="address_street" class="form-label">Street Address</label>
-                    <input type="text" class="form-control" id="address_street" name="address_street"
-                           placeholder="123 Main Street">
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="address_city" class="form-label">City</label>
-                        <input type="text" class="form-control" id="address_city" name="address_city"
-                               placeholder="New York">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="address_country" class="form-label">Country</label>
-                        <select class="form-control" id="address_country" name="address_country">
-                            <option value="">Select Country</option>
-                            <option value="USA">United States</option>
-                            <option value="UK">United Kingdom</option>
-                            <option value="Canada">Canada</option>
-                            <option value="Australia">Australia</option>
-                            <option value="Germany">Germany</option>
-                            <option value="France">France</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="newsletter" name="newsletter">
-                        <label class="form-check-label" for="newsletter">
-                            Subscribe to our newsletter for updates and promotions
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="mb-4 form-check">
-                    <input type="checkbox" class="form-check-input" id="terms" required>
-                    <label class="form-check-label" for="terms">
-                        I agree to the <a href="#" class="terms-link" data-bs-toggle="modal" data-bs-target="#termsModal">Terms & Conditions</a> and <a href="#" class="terms-link" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>
-                    </label>
-                    <div class="invalid-feedback">You must agree to the terms and conditions.</div>
-                </div>
-                
-                <button type="submit" class="btn btn-primary w-100 py-3" name="signup_btn">
-                    <i class="fas fa-user-plus me-2"></i>Create Account
-                </button>
-                
-                <div class="text-center mt-4">
-                    <p class="text-muted">Already have an account? 
-                        <a href="login.php" class="login-link">Login here</a>
-                    </p>
-                    <hr class="my-4">
-                    <p class="text-muted small">
-                        By creating an account, you agree to our Terms and Privacy Policy.
-                        Your information is secure with us.
-                    </p>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
     
+    <!-- FOOTER - This will now be visible -->
+    <?php include 'includes/footer.php'; ?>
+    
     <!-- Terms Modal -->
     <div class="modal fade" id="termsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Terms & Conditions</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-gem me-2" style="color: var(--gold);"></i>
+                        Terms & Conditions
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -301,10 +971,13 @@ require_once 'config/constants.php';
     
     <!-- Privacy Modal -->
     <div class="modal fade" id="privacyModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Privacy Policy</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-gem me-2" style="color: var(--gold);"></i>
+                        Privacy Policy
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -326,8 +999,10 @@ require_once 'config/constants.php';
             </div>
         </div>
     </div>
-    
+
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
         // Password strength checker
         function checkPasswordStrength(password) {
@@ -346,28 +1021,19 @@ require_once 'config/constants.php';
                 if (element) {
                     if (requirements[key]) {
                         element.classList.add('met');
-                        element.innerHTML = `<i class="fas fa-check-circle me-1"></i>${element.textContent.replace('●', '')}`;
+                        element.innerHTML = `<i class="fas fa-check-circle"></i> ${element.textContent.split(' ').slice(1).join(' ')}`;
                         strength++;
                     } else {
                         element.classList.remove('met');
-                        element.innerHTML = `<i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>${element.textContent.replace('✓', '')}`;
+                        element.innerHTML = `<i class="fas fa-circle" style="font-size: 0.45rem;"></i> ${element.textContent.split(' ').slice(1).join(' ')}`;
                     }
                 }
             });
             
             // Update strength meter
             const strengthBar = document.getElementById('passwordStrength');
-            strengthBar.className = 'password-strength';
-            
-            if (strength <= 2) {
-                strengthBar.classList.add('strength-weak');
-            } else if (strength === 3) {
-                strengthBar.classList.add('strength-medium');
-            } else if (strength === 4) {
-                strengthBar.classList.add('strength-strong');
-            } else if (strength === 5) {
-                strengthBar.classList.add('strength-very-strong');
-            }
+            const width = (strength / 5) * 100;
+            strengthBar.style.setProperty('--strength-width', width + '%');
             
             return requirements;
         }
@@ -414,16 +1080,15 @@ require_once 'config/constants.php';
             
             if (confirmPassword === '') {
                 matchMessage.textContent = '';
-                matchMessage.className = 'form-text mt-1';
                 return;
             }
             
             if (password === confirmPassword) {
-                matchMessage.innerHTML = '<i class="fas fa-check-circle me-1 text-success"></i>Passwords match';
-                matchMessage.className = 'form-text mt-1 text-success';
+                matchMessage.innerHTML = '<i class="fas fa-check-circle" style="color: var(--gold);"></i> Passwords match';
+                matchMessage.style.color = 'var(--gold)';
             } else {
-                matchMessage.innerHTML = '<i class="fas fa-times-circle me-1 text-danger"></i>Passwords do not match';
-                matchMessage.className = 'form-text mt-1 text-danger';
+                matchMessage.innerHTML = '<i class="fas fa-times-circle text-danger"></i> Passwords do not match';
+                matchMessage.style.color = '#dc3545';
             }
         }
         
@@ -431,86 +1096,16 @@ require_once 'config/constants.php';
         
         // Form validation
         document.getElementById('signupForm').addEventListener('submit', function(e) {
-            // Check if form is valid
-            if (!this.checkValidity()) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            
-            this.classList.add('was-validated');
-            
-            // Custom validation
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-            const phone = document.getElementById('phone_cell').value;
-            
-            // Password match validation
-            if (password !== confirmPassword) {
-                e.preventDefault();
-                alert('Passwords do not match!');
-                return false;
-            }
-            
-            // Password strength validation
-            const requirements = checkPasswordStrength(password);
-            if (!requirements.length || !requirements.uppercase || !requirements.lowercase || !requirements.number) {
-                e.preventDefault();
-                alert('Password must meet all requirements (8+ characters, uppercase, lowercase, and number)!');
-                return false;
-            }
-            
-            // Phone number validation (basic)
-            const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-            const cleanedPhone = phone.replace(/[\s\-\(\)]/g, '');
-            if (!phoneRegex.test(cleanedPhone) && phone !== '') {
-                e.preventDefault();
-                alert('Please enter a valid phone number!');
-                return false;
-            }
-            
-            // Email validation
-            const email = document.getElementById('email').value;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                e.preventDefault();
-                alert('Please enter a valid email address!');
-                return false;
-            }
-            
-            // Terms agreement validation
-            const terms = document.getElementById('terms');
-            if (!terms.checked) {
-                e.preventDefault();
-                alert('You must agree to the terms and conditions!');
-                return false;
-            }
+            document.getElementById('signupBtn').classList.add('loading');
         });
         
-        // Real-time validation feedback
-        const inputs = document.querySelectorAll('#signupForm input, #signupForm select');
-        inputs.forEach(input => {
-            input.addEventListener('blur', function() {
-                if (this.value.trim() !== '' || this.type === 'checkbox') {
-                    this.classList.remove('is-invalid');
-                    this.classList.add('is-valid');
-                } else if (this.hasAttribute('required')) {
-                    this.classList.remove('is-valid');
-                    this.classList.add('is-invalid');
-                }
-            });
-            
-            input.addEventListener('input', function() {
-                if (this.value.trim() !== '' || this.checked) {
-                    this.classList.remove('is-invalid');
-                    this.classList.add('is-valid');
-                }
-            });
-        });
-        
-        // Initialize tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+        // Auto-dismiss alerts
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                document.querySelectorAll('.alert-luxury').forEach(function(alert) {
+                    alert.style.display = 'none';
+                });
+            }, 5000);
         });
     </script>
 </body>
