@@ -952,3 +952,11 @@ Stack trace:
 [22-Feb-2026 20:05:37 UTC] PHP Warning:  include(): Failed opening '../includes/footer.php' for inclusion (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\jenny_cosmetics - Copy\signup.php on line 923
 [22-Feb-2026 20:09:27 UTC] User OTP: '580997' (type: string)
 [22-Feb-2026 20:09:27 UTC] Stored OTP: '580997' (type: string)
+[23-Feb-2026 08:19:10 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[23-Feb-2026 08:19:10 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[23-Feb-2026 08:19:10 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[23-Feb-2026 08:19:10 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[23-Feb-2026 08:19:24 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[23-Feb-2026 08:19:24 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[23-Feb-2026 08:19:24 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[23-Feb-2026 08:19:24 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
