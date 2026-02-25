@@ -960,3 +960,7 @@ Stack trace:
 [23-Feb-2026 08:19:24 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
 [23-Feb-2026 08:19:24 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
 [23-Feb-2026 08:19:24 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[25-Feb-2026 04:08:12 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[25-Feb-2026 04:08:12 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[25-Feb-2026 04:08:12 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
+[25-Feb-2026 04:08:12 UTC] PHP Warning:  Undefined variable $index in C:\xampp\htdocs\jenny_cosmetics - Copy\product_detail.php on line 248
